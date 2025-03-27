@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Primary Colors */
+  --color-primary: #95bf47; /* Brand Green */
+  --color-primary-hover: #7ea63b; /* Hover Green */
+  --color-primary-light: #b7d97a; /* Lighter Green */
+  --color-primary-dark: #5e8e3e; /* Supporting Green */
+
+  /* Secondary Colors */
+  --color-secondary: #5e8e3e; /* Supporting Green */
+  --color-secondary-hover: #4a6f30; /* Hover Supporting Green */
+  --color-secondary-light: #7fae5a; /* Lighter Supporting Green */
+  --color-secondary-dark: #3a5a24; /* Darker Supporting Green */
+
+  /* Background Colors */
+  --color-background: #f7ffe9; /* Soft Background */
+  --color-background-muted: #eaf5d3; /* Muted Background */
+  --color-background-dark: #2f4f1e; /* Darker Background */
+
+  /* Text Colors */
+  --color-text: #2f4f1e; /* Default Text */
+  --color-text-muted: #6b8b4a; /* Muted Text */
+  --color-text-light: #95bf47; /* Highlighted Text */
+
+  /* Border Colors */
+  --color-border: #95bf47; /* Primary Border */
+  --color-border-muted: #d4e6b5; /* Muted Border */
+  --color-border-dark: #5e8e3e; /* Darker Border */
+
+  /* Shadow Colors */
+  --color-shadow: rgba(0, 0, 0, 0.1); /* Light Shadow */
+  --color-shadow-dark: rgba(0, 0, 0, 0.3); /* Darker Shadow */
+}
+
+@layer theme {
+  .dark {
+    /* Primary Colors */
+    --color-primary: #bdbdbd; /* Light Gray */
+    --color-primary-hover: #a6a6a6; /* Hover Light Gray */
+    --color-primary-light: #d6d6d6; /* Lighter Gray */
+    --color-primary-dark: #757575; /* Medium Gray */
+
+    /* Secondary Colors */
+    --color-secondary: #757575; /* Medium Gray */
+    --color-secondary-hover: #5e5e5e; /* Hover Medium Gray */
+    --color-secondary-light: #9e9e9e; /* Lighter Medium Gray */
+    --color-secondary-dark: #424242; /* Darker Medium Gray */
+
+    /* Background Colors */
+    --color-background: #121212; /* Almost Black */
+    --color-background-muted: #1e1e1e; /* Muted Background */
+    --color-background-dark: #0d0d0d; /* Darker Background */
+
+    /* Text Colors */
+    --color-text: #e0e0e0; /* Light Gray Text */
+    --color-text-muted: #bdbdbd; /* Muted Text */
+    --color-text-light: #ffffff; /* Highlighted Text */
+
+    /* Border Colors */
+    --color-border: #757575; /* Medium Gray Border */
+    --color-border-muted: #424242; /* Muted Border */
+    --color-border-dark: #2e2e2e; /* Darker Border */
+
+    /* Shadow Colors */
+    --color-shadow: rgba(0, 0, 0, 0.5); /* Dark Shadow */
+    --color-shadow-dark: rgba(0, 0, 0, 0.7); /* Darker Shadow */
+  }
+}
