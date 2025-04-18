@@ -5,6 +5,7 @@ import { useSideBarContext } from "../contexts/SidebarContext";
 import Products from "../pages/products/Products";
 import Sales from "../pages/sales/Sales";
 import Customers from "../pages/customers/Customers";
+import Cashier from "../pages/cashier/Cashier"; // Import the Cashier component
 
 export default function MainContent() {
   const { isExpanded } = useSideBarContext();
@@ -22,6 +23,7 @@ export default function MainContent() {
           <Route path="/products" element={<Products />} />
           <Route path="/sales" element={<Sales />} />
           <Route path="/customers" element={<Customers />} />
+          <Route path="/cashier" element={<Cashier />} />
         </Routes>
       </div>
     </div>

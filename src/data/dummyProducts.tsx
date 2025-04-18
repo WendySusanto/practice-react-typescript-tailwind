@@ -17,7 +17,7 @@ export const products: Product[] = [
   },
   {
     id: 2,
-    name: "Produk 2",
+    name: "le patta",
     satuan: "kg",
     harga: 20000,
     modal: 15000,
@@ -31,7 +31,7 @@ export const products: Product[] = [
   },
   {
     id: 3,
-    name: "Produk 3",
+    name: "lepata",
     satuan: "liter",
     harga: 15000,
     modal: 12000,
@@ -45,7 +45,7 @@ export const products: Product[] = [
   },
   {
     id: 4,
-    name: "Produk 4",
+    name: "lepatta",
     satuan: "box",
     harga: 50000,
     modal: 40000,

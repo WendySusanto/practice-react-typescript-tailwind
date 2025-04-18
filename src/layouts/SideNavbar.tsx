@@ -2,7 +2,6 @@ import {
   Contact,
   DollarSignIcon,
   LayoutDashboard,
-  Settings,
   ShoppingBasket,
 } from "lucide-react";
 import SideNavbarItem from "./SideNavbarItem";
