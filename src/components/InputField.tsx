@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ComponentProps } from "react";
 
 interface InputFieldProps {
   label: string;
@@ -9,27 +9,29 @@ interface InputFieldProps {
   error?: string;
 }
 
-export const InputField: React.FC<InputFieldProps> = ({
+export function InputField({
   label,
   name,
   type = "text",
   value,
   onChange,
   error,
-}) => {
+  ...props
+}: InputFieldProps & ComponentProps<"input">) {
   return (
     <div>
-      <label className="block text-sm font-medium">{label}</label>
+      <label className="block text-sm font-medium text-text">{label}</label>
       <input
+        {...props}
         type={type}
         name={name}
         value={value}
         onChange={onChange}
-        className={`w-full border rounded px-2 py-1 ${
-          error ? "border-red-500" : "border-gray-300"
+        className={`w-full border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-secondary ${
+          error ? "border-red-500" : "text-text"
         }`}
       />
       {error && <p className="text-red-500 text-sm">{error}</p>}
     </div>
   );
-};
+}

@@ -17,7 +17,7 @@ export default function MainContent() {
       }`}
     >
       <SideNavbar />
-      <div className="p-8">
+      <div className="p-8 bg-background">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/products" element={<Products />} />

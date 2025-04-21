@@ -28,14 +28,14 @@ const buttonStyles = cva(
         outline: [
           "border",
           "border-primary",
-          "text-primary",
+          "text-secondary",
           "bg-transparent",
-          "hover:bg-primary-light",
+          "hover:bg-primary",
           "hover:text-white",
           "focus:ring-primary",
         ],
         ghost: [
-          "bg-transparent",
+          "bg-muted",
           "text-primary",
           "hover:bg-primary-light",
           "hover:text-white",

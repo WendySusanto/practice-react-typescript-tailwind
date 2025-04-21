@@ -34,7 +34,7 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="relative rounded-md mt-3">
+    <div className="relative rounded-md mt-3 text-text">
       {/* Global Filter Input */}
       {!disableSearch && (
         <div className="absolute top-[-3.4rem] left-0">
@@ -43,12 +43,12 @@ export function DataTable<TData, TValue>({
             placeholder="Search..."
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            className="p-2 border border-border rounded-md"
+            className="p-2 border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
       )}
 
-      <table className="w-full text-sm border border-border text-left text-text overflow-scroll">
+      <table className="w-full text-sm border border-border text-left text-text overflow-x-auto">
         {/* Header */}
         <thead className="bg-primary-dark text-white">
           {table.getHeaderGroups().map((headerGroup) => (
@@ -70,7 +70,7 @@ export function DataTable<TData, TValue>({
           ))}
         </thead>
         {/* Body */}
-        <tbody className="bg-white">
+        <tbody className="bg-background">
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
               <tr

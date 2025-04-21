@@ -8,6 +8,7 @@ import { Product } from "../../types/Products";
 import { Minus, Plus, Trash2Icon } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useModeContext } from "../../contexts/ModeContext";
+import { InputField } from "../../components/InputField";
 
 type ProductSale = {
   id: number;
@@ -125,13 +126,15 @@ export default function Cashier() {
   };
 
   return (
-    <div className="text-text sm:p-25 p-4">
-      <h1 className="text-2xl font-bold text-primary">Cashier</h1>
+    <div className="text-text sm:p-25 p-4 bg-background h-screen">
+      <h1 className="text-2xl font-bold text-secondary mb-5">Cashier</h1>
 
       {/* Product Selection */}
       <div className="mb-8">
-        <label className="block text-sm font-medium">Input Product</label>
+        <label className="block text-sm font-medium mb-2">Input Product</label>
+
         <Select
+          className="bg-background"
           options={productOptions.map((product) => ({
             value: product.id,
             label: `${product.id} - ${product.name}`,
@@ -150,6 +153,49 @@ export default function Cashier() {
           }}
           filterOption={customFilter} // Use custom filter function
           placeholder="Search or select a product"
+          styles={{
+            control: (base, state) => ({
+              ...base,
+              backgroundColor: "var(--color-background-muted)", // Matches your design
+              borderColor: state.isFocused
+                ? "var(--color-primary)"
+                : "var(--color-border-muted)",
+              boxShadow: state.isFocused
+                ? "0 0 0 2px var(--color-primary)"
+                : "none",
+              "&:hover": {
+                borderColor: "var(--color-primary-hover)",
+              },
+              color: "var(--color-text-primary)",
+            }),
+            menu: (base) => ({
+              ...base,
+              backgroundColor: "var(--color-background-muted)", // Matches dark mode
+              borderRadius: "0.375rem",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            }),
+            option: (base, state) => ({
+              ...base,
+              backgroundColor: state.isFocused
+                ? "var(--color-primary-light)"
+                : "var(--color-background-muted)",
+              "&:hover": {
+                backgroundColor: "var(--color-primary-light)",
+              },
+            }),
+            placeholder: (base) => ({
+              ...base,
+              color: "var(--color-text-muted)",
+            }),
+            singleValue: (base) => ({
+              ...base,
+              color: "var(--color-text-primary)",
+            }),
+            input: (base) => ({
+              ...base,
+              color: "var(--color-text-primary)",
+            }),
+          }}
         />
       </div>
 
@@ -165,42 +211,44 @@ export default function Cashier() {
               cell: ({ row }) => (
                 <div className="flex items-center gap-2">
                   {/* Decrease Quantity Button */}
-                  <button
+                  <Button
+                    variant="outline"
                     onClick={() =>
                       handleQuantityChange(
                         row.original.id,
                         row.original.quantity - 1
                       )
                     }
-                    className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
                     disabled={row.original.quantity <= 1} // Disable if quantity is 1
                   >
                     <Minus className="w-4 h-4 mx-auto" />
-                  </button>
+                  </Button>
 
                   {/* Quantity Input */}
-                  <input
+                  <InputField
+                    className=""
                     type="number"
                     value={row.original.quantity}
                     onChange={(e) =>
                       handleQuantityChange(row.original.id, +e.target.value)
                     }
-                    className="w-16 border rounded px-2 py-1 text-center"
                     min={1} // Minimum value for quantity
+                    label={""}
+                    name={""}
                   />
 
                   {/* Increase Quantity Button */}
-                  <button
+                  <Button
+                    variant="outline"
                     onClick={() =>
                       handleQuantityChange(
                         row.original.id,
                         row.original.quantity + 1
                       )
                     }
-                    className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
                   >
                     <Plus className=" w-4 h-4 mx-auto" />
-                  </button>
+                  </Button>
                 </div>
               ),
             },
@@ -232,7 +280,7 @@ export default function Cashier() {
               cell: ({ row }) => (
                 <button
                   onClick={() => handleRemoveProduct(row.original.id)}
-                  className="text-red-500"
+                  className="text-red-500 cursor-pointer hover:text-red-700"
                 >
                   <Trash2Icon className="w-4 h-4" />
                 </button>

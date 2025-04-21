@@ -4,6 +4,7 @@ import { useThemeContext } from "../contexts/ThemeContext";
 import { useModeContext } from "../contexts/ModeContext";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import logo from "../assets/no-background-logo-invoice.png";
 
 export default function Header() {
   const { toggle, isExpanded } = useSideBarContext();
@@ -23,15 +24,16 @@ export default function Header() {
   };
 
   return (
-    <div className="flex items-center bg-primary-dark text-white h-16 px-4 sticky w-screen z-10 shadow-md flex-grow">
+    <div className="flex items-center bg-primary-dark text-white h-18 px-4 sticky w-screen z-10 shadow-md flex-grow">
       {!isAdminMode && (
         <button className="lg:hidden items-center cursor-pointer mr-3 hidden sm:block text-white">
           <Menu onClick={() => toggle()} />
         </button>
       )}
-      <div className="flex whitespace-nowrap">
-        Toko Sinar Terang {isExpanded.toString()} {isDark.toString()}{" "}
-        {isAdminMode.toString()}
+      <div className="flex items-center text-2xl font-bold ml-3">
+        <a href="/" className="text-white tracking-wide drop-shadow-sm">
+          Sinar Terang
+        </a>
       </div>
       <div className="flex items-center justify-end flex-1 ">
         <button
@@ -40,7 +42,7 @@ export default function Header() {
         >
           <Settings />
           {openSettings && (
-            <div className="absolute right-0 bg-white mt-2  whitespace-nowrap text-black py-3 px-4 shadow-lg rounded-md ">
+            <div className="absolute right-0 bg-background mt-2 whitespace-nowrap text-secondary py-3 px-4 shadow-lg rounded-md ">
               <ul>
                 <li className="flex items-center mb-2">
                   <span className="mr-5">Switch Mode</span>

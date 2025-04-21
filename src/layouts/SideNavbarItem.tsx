@@ -20,13 +20,13 @@ export default function SideNavbarItem({
       to={to}
       className={({ isActive }) =>
         `flex items-center py-4 text-xl whitespace-nowrap ${
-          isActive ? "text-primary font-bold" : "text-text-muted"
+          isActive ? "text-primary- font-bold" : "text-text-muted"
         }`
       }
     >
-      <Icon className="w-8 h-8 mr-3 flex-shrink-0" />
+      <Icon className="w-8 h-8 mr-3 flex-shrink-0 text-secondary" />
       <div
-        className={`overflow-hidden transition-all duration-300 ${
+        className={`overflow-hidden text-secondary transition-all duration-300 ${
           isExpanded ? "opacity-100 w-auto ml-2" : "opacity-0 w-0"
         }`}
       >

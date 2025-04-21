@@ -129,7 +129,7 @@ export default function Products() {
 
   return (
     <div className="">
-      <h1 className="text-2xl font-bold text-primary mb-6">Products</h1>
+      <h1 className="text-2xl font-bold text-secondary mb-6">Products</h1>
       <div className="flex items-center justify-end gap-2">
         <div className="flex items-center gap-2">
           <Button onClick={openAddModal} variant="default" size="md">
@@ -154,6 +154,7 @@ export default function Products() {
           <InputField
             label="Name"
             name="name"
+            min={1}
             value={formData.name}
             onChange={handleInputChange}
             error={errors.name}
@@ -161,6 +162,7 @@ export default function Products() {
           <InputField
             label="Satuan"
             name="satuan"
+            min={1}
             value={formData.satuan}
             onChange={handleInputChange}
             error={errors.satuan}
@@ -169,6 +171,7 @@ export default function Products() {
             label="Modal"
             name="modal"
             type="number"
+            min={1}
             value={formData.modal}
             onChange={handleInputChange}
             error={errors.modal}
@@ -177,6 +180,7 @@ export default function Products() {
             label="Harga"
             name="harga"
             type="number"
+            min={1}
             value={formData.harga}
             onChange={handleInputChange}
             error={errors.harga}

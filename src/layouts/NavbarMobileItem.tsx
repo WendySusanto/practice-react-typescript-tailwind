@@ -17,7 +17,7 @@ export default function NavbarMobileItem({
       to={to}
       className={({ isActive }) =>
         `flex flex-col items-center whitespace-nowrap w-16 ${
-          isActive ? "text-primary font-bold" : "text-text-muted"
+          isActive ? "text-secondary font-bold" : "text-text-muted"
         }`
       }
     >

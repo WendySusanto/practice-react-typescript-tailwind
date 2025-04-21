@@ -38,12 +38,10 @@ export const Modal: React.FC<ModalProps> = ({
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
       <div
         ref={modalRef}
-        className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md"
+        className="bg-background-muted rounded-lg shadow-lg p-6 w-full max-w-md text-text"
       >
         {title && <h2 className="text-xl font-bold mb-4">{title}</h2>}
-        {description && (
-          <p className="text-sm text-gray-600 mb-4">{description}</p>
-        )}
+        {description && <p className="text-sm text-text mb-4">{description}</p>}
         {children}
       </div>
     </div>
