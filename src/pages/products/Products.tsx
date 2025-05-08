@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { products } from "../../data/dummyProducts";
+import { useEffect, useMemo, useState } from "react";
 import { Product } from "../../types/Products";
 import { DataTable } from "../../components/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
@@ -10,10 +9,7 @@ import { useModal } from "../../hooks/useModal";
 import { z } from "zod"; // Import zod
 import { InputField } from "../../components/InputField";
 import { AnimatedSuccessIcon } from "../../components/AnimatedSuccessIcon";
-
-function getData(): Product[] {
-  return products;
-}
+import { useFetch } from "../../hooks/useFetch";
 
 // Define a zod schema for form validation
 const productSchema = z.object({
@@ -25,15 +21,15 @@ const productSchema = z.object({
 
 const productColumns: ColumnDef<Product>[] = [
   {
-    accessorKey: "name",
+    accessorKey: "Name",
     header: "Name",
   },
   {
-    accessorKey: "satuan",
+    accessorKey: "Satuan",
     header: "Satuan",
   },
   {
-    accessorKey: "modal",
+    accessorKey: "Modal",
     header: "Modal",
     cell: ({ getValue }) => {
       const value = getValue() as number;
@@ -48,7 +44,7 @@ const productColumns: ColumnDef<Product>[] = [
     },
   },
   {
-    accessorKey: "harga",
+    accessorKey: "Harga",
     header: "Harga",
     cell: ({ getValue }) => {
       const value = getValue() as number;
@@ -65,7 +61,8 @@ const productColumns: ColumnDef<Product>[] = [
 ];
 
 export default function Products() {
-  const productData = getData();
+  console.log("Products page loaded");
+
   const {
     isOpen: isAddModalOpen,
     openModal: openAddModal,
@@ -83,6 +80,20 @@ export default function Products() {
     harga: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const headers = {
+    Authorization: `Bearer test`,
+  };
+
+  const { isError, isLoading, data, errorMessage, statusCode } = useFetch<
+    Product[]
+  >({ url: "/api/products", method: "GET", headers: headers });
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  } else if (isError) {
+    return <div>Error...</div>;
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -208,7 +219,7 @@ export default function Products() {
           </p>
         </div>
       </Modal>
-      <DataTable columns={productColumns} data={productData} />
+      <DataTable columns={productColumns} data={data} />
     </div>
   );
 }

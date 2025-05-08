@@ -4,7 +4,6 @@ import { useThemeContext } from "../contexts/ThemeContext";
 import { useModeContext } from "../contexts/ModeContext";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import logo from "../assets/no-background-logo-invoice.png";
 
 export default function Header() {
   const { toggle, isExpanded } = useSideBarContext();
