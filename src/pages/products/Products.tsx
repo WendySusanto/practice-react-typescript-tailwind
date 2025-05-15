@@ -10,6 +10,7 @@ import { z } from "zod"; // Import zod
 import { InputField } from "../../components/InputField";
 import { AnimatedSuccessIcon } from "../../components/AnimatedSuccessIcon";
 import { useFetch } from "../../hooks/useFetch";
+import { TextArea } from "../../components/TextArea";
 
 // Define a zod schema for form validation
 const productSchema = z.object({
@@ -17,19 +18,21 @@ const productSchema = z.object({
   satuan: z.string().min(1, "Satuan is required"),
   modal: z.number().min(0, "Modal must be a positive number"),
   harga: z.number().min(0, "Harga must be a positive number"),
+  barcode: z.string().nonempty("Barcode is required"),
+  note: z.string().optional(),
 });
 
 const productColumns: ColumnDef<Product>[] = [
   {
-    accessorKey: "Name",
+    accessorKey: "name",
     header: "Name",
   },
   {
-    accessorKey: "Satuan",
+    accessorKey: "satuan",
     header: "Satuan",
   },
   {
-    accessorKey: "Modal",
+    accessorKey: "modal",
     header: "Modal",
     cell: ({ getValue }) => {
       const value = getValue() as number;
@@ -44,7 +47,7 @@ const productColumns: ColumnDef<Product>[] = [
     },
   },
   {
-    accessorKey: "Harga",
+    accessorKey: "harga",
     header: "Harga",
     cell: ({ getValue }) => {
       const value = getValue() as number;
@@ -78,24 +81,43 @@ export default function Products() {
     satuan: "",
     modal: "",
     harga: "",
+    barcode: "",
+    note: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [data, setData] = useState<Product[]>([]);
 
-  const headers = {
-    Authorization: `Bearer test`,
-  };
+  const { get, post, isError, isLoading, errorMessage, statusCode } =
+    useFetch<Product[]>();
 
-  const { isError, isLoading, data, errorMessage, statusCode } = useFetch<
-    Product[]
-  >({ url: "/api/products", method: "GET", headers: headers });
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await get("/api/products", { Authorization: "Bearer test" });
+      if (data) {
+        setData(data);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   if (isLoading) {
     return <div>Loading...</div>;
   } else if (isError) {
-    return <div>Error...</div>;
+    return (
+      <div>
+        Error...
+        {errorMessage && <p>{errorMessage}</p>}
+      </div>
+    );
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleTextAreaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -111,6 +133,14 @@ export default function Products() {
       });
 
       console.log("Saving product:", validatedData);
+
+      await post("/api/products", validatedData, {
+        Authorization: "Bearer test",
+      });
+
+      console.log("Product saved successfully");
+
+      debugger;
       closeAddModal();
       openSuccessModal();
       setFormData({
@@ -118,6 +148,8 @@ export default function Products() {
         satuan: "",
         modal: "",
         harga: "",
+        barcode: "",
+        note: "",
       });
       setErrors({}); // Clear errors on successful submission
     } catch (error) {
@@ -196,6 +228,24 @@ export default function Products() {
             onChange={handleInputChange}
             error={errors.harga}
           />
+
+          <InputField
+            label="Barcode"
+            name="barcode"
+            type="text"
+            value={formData.barcode}
+            onChange={handleInputChange}
+            error={errors.barcode}
+          />
+
+          <TextArea
+            label="Note"
+            name="note"
+            value={formData.note}
+            onChange={handleTextAreaChange}
+            error={errors.note}
+          />
+
           <div className="flex justify-end gap-2">
             <Button onClick={closeAddModal} variant="outline" size="md">
               Cancel

@@ -23,7 +23,7 @@ export default function Header() {
   };
 
   return (
-    <div className="flex items-center bg-primary-dark text-white h-18 px-4 sticky w-screen z-10 shadow-md flex-grow">
+    <div className="flex items-center bg-primary-dark text-white min-h-18 px-4 sticky w-screen z-10 shadow-md ">
       {!isAdminMode && (
         <button className="lg:hidden items-center cursor-pointer mr-3 hidden sm:block text-white">
           <Menu onClick={() => toggle()} />
@@ -34,14 +34,14 @@ export default function Header() {
           Sinar Terang
         </a>
       </div>
-      <div className="flex items-center justify-end flex-1 ">
+      <div className="flex items-center justify-end flex-1 mr-3">
         <button
           className="relative text-white cursor-pointer"
           onClick={() => setIsOpenSettings(!openSettings)}
         >
           <Settings />
           {openSettings && (
-            <div className="absolute right-0 bg-background mt-2 whitespace-nowrap text-secondary py-3 px-4 shadow-lg rounded-md ">
+            <div className="absolute right-0 bg-background mt-2 whitespace-nowrap text-secondary py-3 px-4 shadow-lg rounded-md">
               <ul>
                 <li className="flex items-center mb-2">
                   <span className="mr-5">Switch Mode</span>
