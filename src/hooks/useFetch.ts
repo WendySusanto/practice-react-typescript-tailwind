@@ -69,7 +69,6 @@ export function useFetch<T>() {
     [baseUrl]
   );
 
-  // ✨ Declarative methods
   const get = (url: string, headers?: HeadersInit) =>
     fetchData({ url, method: "GET", headers });
 

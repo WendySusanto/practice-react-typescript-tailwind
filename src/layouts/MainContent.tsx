@@ -6,6 +6,7 @@ import Products from "../pages/products/Products";
 import Sales from "../pages/sales/Sales";
 import Customers from "../pages/customers/Customers";
 import Cashier from "../pages/cashier/Cashier"; // Import the Cashier component
+import NotFound from "../pages/error/NotFound";
 
 export default function MainContent() {
   const { isExpanded } = useSideBarContext();
@@ -24,6 +25,7 @@ export default function MainContent() {
           <Route path="/sales" element={<Sales />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/cashier" element={<Cashier />} />
+          <Route path="/*" element={<NotFound />} />
         </Routes>
       </div>
     </div>

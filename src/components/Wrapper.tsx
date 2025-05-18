@@ -10,18 +10,20 @@ export default function Wrapper() {
   return (
     <div className={`flex flex-col max-h-screen ${isDark ? "dark" : "light"}`}>
       <Header />
-      <Routes>
-        <Route path="/cashier" element={<Cashier />} />
-        <Route
-          path="/*"
-          element={
-            <>
-              <MainContent />
-              <NavbarMobile />
-            </>
-          }
-        />
-      </Routes>
+      <div className="mt-16">
+        <Routes>
+          <Route path="/cashier" element={<Cashier />} />
+          <Route
+            path="/*"
+            element={
+              <>
+                <MainContent />
+                <NavbarMobile />
+              </>
+            }
+          />
+        </Routes>
+      </div>
     </div>
   );
 }

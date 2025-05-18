@@ -13,4 +13,5 @@ export type Product = {
   expired: string;
   barcode: string;
   note: string;
+  members: Member[];
 };
