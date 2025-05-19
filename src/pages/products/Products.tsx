@@ -70,14 +70,15 @@ export default function Products() {
       cell: ({ row }) => {
         return (
           <div className="">
-            <Button variant="default" size="sm">
-              <Pencil
-                className="h-4 w-4"
-                onClick={() => {
-                  console.log("on click");
-                  handleEdit(row.original);
-                }}
-              />
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => {
+                console.log("on click");
+                handleEdit(row.original);
+              }}
+            >
+              <Pencil className="h-4 w-4" />
             </Button>
           </div>
         );

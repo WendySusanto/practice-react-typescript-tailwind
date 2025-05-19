@@ -2,7 +2,7 @@ import Button from "../../components/Button";
 
 export default function Dashboard() {
   return (
-    <div className="text-text">
+    <div className="text-text h-screen">
       <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
       Lorem ipsum dolor sit amet consectetur adipisicing elit. Saepe voluptate
       fugiat error id voluptatum ut quae. Minus vitae eaque perferendis sequi

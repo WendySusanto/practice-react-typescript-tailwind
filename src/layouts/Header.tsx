@@ -23,7 +23,7 @@ export default function Header() {
   };
 
   return (
-    <div className="flex items-center bg-primary-dark text-white min-h-18 px-4 fixed top-0 left-0 right-0 z-10 shadow-md ">
+    <div className="flex items-center bg-primary-dark text-white min-h-18 px-4 fixed top-0 left-0 right-0 z-99 shadow-md ">
       {!isAdminMode && (
         <button className="lg:hidden items-center cursor-pointer mr-3 hidden sm:block text-white">
           <Menu onClick={() => toggle()} />
@@ -31,7 +31,7 @@ export default function Header() {
       )}
       <div className="flex items-center text-2xl font-bold ml-3">
         <a href="/" className="text-white tracking-wide drop-shadow-sm">
-          Sinar Terang
+          Sinar Terang {isExpanded.toString()}
         </a>
       </div>
       <div className="flex items-center justify-end flex-1 mr-3">

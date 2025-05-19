@@ -12,13 +12,13 @@ export default function MainContent() {
   const { isExpanded } = useSideBarContext();
 
   return (
-    <div
-      className={`grid h-screen transition-all duration-300 ${
-        isExpanded ? "sm:grid-cols-[16rem_1fr]" : "sm:grid-cols-[4rem_1fr]"
-      }`}
-    >
+    <div>
       <SideNavbar />
-      <div className="p-8 bg-background">
+      <div
+        className={`p-8 bg-background transition-all duration-300 ${
+          isExpanded ? "sm:ml-64" : "sm:ml-16"
+        }`}
+      >
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/products" element={<Products />} />

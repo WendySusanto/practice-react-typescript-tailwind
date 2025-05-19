@@ -22,9 +22,15 @@ export function SideBarProvider({ children }: SidebarProviderProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
+    //initial setup
+    window.innerWidth > 1024 ? setIsExpanded(true) : setIsExpanded(false);
+
     const handler = () => {
-      if (!isScreenSmall()) setIsExpanded(true);
-      else setIsExpanded(false);
+      if (!isScreenSmall()) {
+        setIsExpanded(true);
+      } else {
+        setIsExpanded(false);
+      }
     };
 
     window.addEventListener("resize", handler);
