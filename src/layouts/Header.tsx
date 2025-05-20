@@ -23,7 +23,7 @@ export default function Header() {
   };
 
   return (
-    <div className="flex items-center bg-primary-dark text-white min-h-18 px-4 fixed top-0 left-0 right-0 z-99 shadow-md ">
+    <div className="flex items-center bg-primary-dark text-white min-h-18 px-4 fixed top-0 left-0 right-0 z-98 shadow-md ">
       {!isAdminMode && (
         <button className="lg:hidden items-center cursor-pointer mr-3 hidden sm:block text-white">
           <Menu onClick={() => toggle()} />

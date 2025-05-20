@@ -19,14 +19,16 @@ export default function MainContent() {
           isExpanded ? "sm:ml-64" : "sm:ml-16"
         }`}
       >
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/sales" element={<Sales />} />
-          <Route path="/customers" element={<Customers />} />
-          <Route path="/cashier" element={<Cashier />} />
-          <Route path="/*" element={<NotFound />} />
-        </Routes>
+        <div className="h-screen">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/sales" element={<Sales />} />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/cashier" element={<Cashier />} />
+            <Route path="/*" element={<NotFound />} />
+          </Routes>
+        </div>
       </div>
     </div>
   );
