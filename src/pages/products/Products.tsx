@@ -144,6 +144,23 @@ export default function Products() {
     statusCode,
   } = useFetch<Product[]>();
 
+  const csvData = data.map((row) => ({
+    ...row,
+    name: escapeCsvField(row.name),
+    satuan: escapeCsvField(row.satuan),
+    barcode: escapeCsvField(row.barcode),
+    note: escapeCsvField(row.note),
+    // Add other fields as needed
+  }));
+
+  function escapeCsvField(field: string) {
+    if (typeof field !== "string") return field;
+    // Escape double quotes by replacing " with ""
+    const escaped = field.replace(/"/g, '""');
+
+    return escaped;
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       const data = await get("/api/products", { Authorization: "Bearer test" });
@@ -172,8 +189,16 @@ export default function Products() {
     if (!file) return;
 
     Papa.parse<Product>(file, {
+      delimiter: ",",
       header: true,
       skipEmptyLines: true,
+      dynamicTyping: {
+        barcode: false,
+        id: true,
+        harga: true,
+        modal: true,
+        flag: true,
+      },
       complete: async (results: ParseResult<Product>) => {
         // Optionally validate/transform data here
 
@@ -182,7 +207,9 @@ export default function Products() {
         await post("/api/products/import", results.data);
 
         // Option 1: Add to local state only
-        setData((prev) => [...prev, ...data]);
+        setData((prev) => [...prev, ...results.data]);
+
+        openSuccessModal();
 
         // Option 2: Also send to backend (uncomment if needed)
         // for (const product of importedProducts) {
@@ -318,7 +345,7 @@ export default function Products() {
       satuan: row.satuan,
       modal: String(row.modal),
       harga: String(row.harga),
-      barcode: row.barcode,
+      barcode: String(row.barcode),
       expired: row.expired,
       note: row.note,
     });
@@ -395,7 +422,8 @@ export default function Products() {
           </Button>
           <Button className="" variant="default" size="md">
             <CSVLink
-              data={data}
+              data={csvData}
+              enclosingCharacter={`"`}
               filename={`Product_Sinar_Terang_${new Date().toDateString()}`}
             >
               Export to CSV
