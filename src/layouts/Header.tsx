@@ -31,7 +31,7 @@ export default function Header() {
       )}
       <div className="flex items-center text-2xl font-bold ml-3">
         <a href="/" className="text-white tracking-wide drop-shadow-sm">
-          Sinar Terang {isExpanded.toString()}
+          Sinar Terang
         </a>
       </div>
       <div className="flex items-center justify-end flex-1 mr-3">
@@ -41,13 +41,15 @@ export default function Header() {
         >
           <Settings />
           {openSettings && (
-            <div className="absolute right-0 bg-background mt-2 whitespace-nowrap text-secondary py-3 px-4 shadow-lg rounded-md">
+            <div className="absolute right-0 bg-background mt-2 whitespace-nowrap text-text py-3 px-4 shadow-lg rounded-md">
               <ul>
                 <li className="flex items-center mb-2">
                   <span className="mr-5">Switch Mode</span>
                   <div
                     className={`relative ml-auto w-16 h-9 rounded-full transition-colors cursor-pointer ${
-                      isAdminMode ? "bg-gray-900" : "bg-gray-100"
+                      isAdminMode
+                        ? "bg-background-dark dark:bg-gray-900"
+                        : "bg-background-muted dark:bg-gray-100"
                     }`}
                     onClick={() => handleAdminToggle()}
                   >
@@ -76,7 +78,9 @@ export default function Header() {
                   <span className="mr-6">Dark Mode</span>
                   <div
                     className={`relative ml-auto w-16 h-9 rounded-full transition-colors cursor-pointer ${
-                      isDark ? "bg-gray-900" : "bg-gray-100"
+                      isDark
+                        ? "bg-background-dark dark:bg-gray-900"
+                        : "bg-background-muted dark:bg-gray-100"
                     }`}
                     onClick={() => toggleDark()}
                   >

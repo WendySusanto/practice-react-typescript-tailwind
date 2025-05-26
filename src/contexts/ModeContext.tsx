@@ -19,13 +19,18 @@ export function useModeContext() {
 }
 
 export function ModeProvider({ children }: ModeProviderProps) {
-  const [isAdminMode, setIsAdmin] = useState(false);
+  const storedMode = localStorage.getItem("adminMode");
+  const initialMode = storedMode === "true" ? true : false;
+
+  const [isAdminMode, setIsAdmin] = useState(initialMode);
 
   function toggleAdmin(state?: boolean) {
     if (state !== undefined) {
       setIsAdmin(state);
+      localStorage.setItem("adminMode", state.toString());
     } else {
       setIsAdmin(!isAdminMode);
+      localStorage.setItem("adminMode", (!isAdminMode).toString());
     }
   }
 

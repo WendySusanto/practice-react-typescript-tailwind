@@ -8,9 +8,9 @@ import Cashier from "../pages/cashier/Cashier";
 export default function Wrapper() {
   const { isDark } = useThemeContext();
   return (
-    <div className={`flex flex-col max-h-screen ${isDark ? "dark" : "light"}`}>
+    <div className={`${isDark ? "dark" : "light"}`}>
       <Header />
-      <div className="mt-16">
+      <div className="pt-16 bg-background min-h-screen">
         <Routes>
           <Route path="/cashier" element={<Cashier />} />
           <Route

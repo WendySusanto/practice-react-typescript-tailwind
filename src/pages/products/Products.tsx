@@ -48,6 +48,7 @@ export default function Products() {
             {value.toLocaleString("id-ID", {
               style: "currency",
               currency: "IDR",
+              minimumFractionDigits: 0,
             })}
           </div>
         );
@@ -63,6 +64,7 @@ export default function Products() {
             {value.toLocaleString("id-ID", {
               style: "currency",
               currency: "IDR",
+              minimumFractionDigits: 0,
             })}
           </div>
         );
@@ -176,7 +178,7 @@ export default function Products() {
     return <LoadingIcon />;
   } else if (isError) {
     return (
-      <div>
+      <div className="text-text">
         Error...
         {errorMessage && <p>{errorMessage}</p>}
       </div>
@@ -200,21 +202,13 @@ export default function Products() {
         flag: true,
       },
       complete: async (results: ParseResult<Product>) => {
-        // Optionally validate/transform data here
-
         console.log("Parsed CSV data:", results.data);
 
         await post("/api/products/import", results.data);
 
-        // Option 1: Add to local state only
-        setData((prev) => [...prev, ...results.data]);
+        setData(() => [...results.data]);
 
         openSuccessModal();
-
-        // Option 2: Also send to backend (uncomment if needed)
-        // for (const product of importedProducts) {
-        //   await post("/api/products", product, { Authorization: "Bearer test" });
-        // }
       },
       error: (error: Error) => {
         alert("Failed to import CSV: " + error.message);
@@ -367,8 +361,6 @@ export default function Products() {
       await patch("/api/products", validatedData, {
         Authorization: "Bearer test",
       });
-
-      debugger;
 
       setData((prev) => {
         const index = prev.findIndex((item) => item.id === Number(formData.id));

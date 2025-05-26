@@ -19,10 +19,14 @@ export function useThemeContext() {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [isDark, setIsDark] = useState(false);
+  const storedTheme = localStorage.getItem("theme");
+  const initialTheme = storedTheme === "dark" ? true : false;
+
+  const [isDark, setIsDark] = useState(initialTheme);
 
   function toggleDark() {
     setIsDark(!isDark);
+    localStorage.setItem("theme", !isDark ? "dark" : "light");
   }
 
   return (

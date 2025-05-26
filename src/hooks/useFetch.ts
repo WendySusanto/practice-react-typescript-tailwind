@@ -26,6 +26,7 @@ export function useFetch<T>() {
       setStatusCode(null);
 
       try {
+        debugger;
         const response = await fetch(baseUrl + url, {
           method,
           headers: {

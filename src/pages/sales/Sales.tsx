@@ -1,93 +1,119 @@
-import { useEffect, useMemo, useState } from "react";
-import { Product } from "../../types/Products";
+import { useEffect, useState } from "react";
+import { Sales } from "../../types/Sales";
 import { DataTable } from "../../components/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import Button from "../../components/Button";
-import { PlusCircle } from "lucide-react";
-import { Modal } from "../../components/Modal";
-import { useModal } from "../../hooks/useModal";
-import { z } from "zod"; // Import zod
-import { InputField } from "../../components/InputField";
-import { AnimatedSuccessIcon } from "../../components/AnimatedSuccessIcon";
+import { LoadingIcon } from "../../components/LoadingIcon";
 import { useFetch } from "../../hooks/useFetch";
-import { TextArea } from "../../components/TextArea";
+import { CSVLink } from "react-csv";
+import { FileText, Printer } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Tooltip } from "../../components/Tooltip";
 
-// Define a zod schema for form validation
-const productSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  satuan: z.string().min(1, "Satuan is required"),
-  modal: z.number().min(0, "Modal must be a positive number"),
-  harga: z.number().min(0, "Harga must be a positive number"),
-  barcode: z.string().nonempty("Barcode is required"),
-  note: z.string().optional(),
-});
+export default function SalesPage() {
+  const navigate = useNavigate(); // Initialize useNavigate
+  const [data, setData] = useState<Sales[]>([]);
 
-const productColumns: ColumnDef<Product>[] = [
-  {
-    accessorKey: "name",
-    header: "Name",
-  },
-  {
-    accessorKey: "satuan",
-    header: "Satuan",
-  },
-  {
-    accessorKey: "modal",
-    header: "Modal",
-    cell: ({ getValue }) => {
-      const value = getValue() as number;
-      return (
-        <div className="">
-          {value.toLocaleString("id-ID", {
-            style: "currency",
-            currency: "IDR",
-          })}
-        </div>
-      );
+  const { get, post, patch, del, isError, isLoading, errorMessage } =
+    useFetch<Sales[]>();
+
+  const salesColumns: ColumnDef<Sales>[] = [
+    { accessorKey: "id", header: "ID" },
+    { accessorKey: "kasir_name", header: "Kasir Name" },
+    { accessorKey: "member_name", header: "Member Name" },
+    {
+      accessorKey: "date_added",
+      header: "Date Added",
+      cell: ({ getValue }) => {
+        const value = getValue() as string;
+        const date = new Date(value);
+        return (
+          <div>
+            {date.toLocaleDateString("id-ID")}{" "}
+            {date.toLocaleTimeString("id-ID", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </div>
+        );
+      },
     },
-  },
-  {
-    accessorKey: "harga",
-    header: "Harga",
-    cell: ({ getValue }) => {
-      const value = getValue() as number;
-      return (
-        <div className="">
-          {value.toLocaleString("id-ID", {
-            style: "currency",
-            currency: "IDR",
-          })}
-        </div>
-      );
+    {
+      accessorKey: "total",
+      header: "Total",
+      cell: ({ getValue }) => {
+        const value = getValue() as number;
+        return (
+          <div>
+            {value.toLocaleString("id-ID", {
+              style: "currency",
+              currency: "IDR",
+              minimumFractionDigits: 0,
+            })}
+          </div>
+        );
+      },
     },
-  },
-];
+    {
+      header: "Actions",
+      cell: ({ row }) => (
+        <div className="gap-2 flex items-center">
+          <Tooltip text="Print Receipt">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => handlePrint(row.original)}
+            >
+              <Printer className="h-4 w-4" />
+            </Button>
+          </Tooltip>
+          <Tooltip text="Print Invoice">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => handlePrintInvoice(row.original)}
+            >
+              <FileText className="h-4 w-4" />
+            </Button>
+          </Tooltip>
+        </div>
+      ),
+    },
+  ];
 
-export default function Sales() {
-  console.log("Sales page loaded");
+  const handlePrint = ({ id }: Sales) => {
+    navigate(`/sales/receipt/${id}`);
+  };
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [data, setData] = useState<Product[]>([]);
+  const handlePrintInvoice = ({ id }: Sales) => {
+    navigate(`/sales/invoice/${id}`);
+  };
 
-  const { get, post, isError, isLoading, errorMessage, statusCode } =
-    useFetch<Product[]>();
+  const csvData = data.map((row) => ({
+    ...row,
+    KasirName: escapeCsvField(row.kasir_name),
+    MemberName: escapeCsvField(row.member_name),
+  }));
+
+  function escapeCsvField(field: string) {
+    if (typeof field !== "string") return field;
+    const escaped = field.replace(/"/g, '""');
+    return escaped;
+  }
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await get("/api/products", { Authorization: "Bearer test" });
-      if (data) {
-        setData(data);
-      }
+      const data = await get("/api/sales", { Authorization: "Bearer test" });
+      if (data) setData(data);
     };
-
     fetchData();
   }, []);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingIcon />;
   } else if (isError) {
     return (
-      <div>
+      <div className="text-text">
         Error...
         {errorMessage && <p>{errorMessage}</p>}
       </div>
@@ -100,11 +126,18 @@ export default function Sales() {
       <div className="flex items-center justify-end gap-2">
         <div className="flex items-center gap-2">
           <Button className="" variant="default" size="md">
-            Export
+            <CSVLink
+              data={csvData}
+              enclosingCharacter={`"`}
+              filename={`Sales_Export_${new Date().toDateString()}`}
+            >
+              Export to CSV
+            </CSVLink>
           </Button>
         </div>
       </div>
-      <DataTable columns={productColumns} data={data} />
+
+      <DataTable columns={salesColumns} data={data} />
     </div>
   );
 }

@@ -3,12 +3,13 @@ import Select from "react-select";
 import Fuse from "fuse.js"; // Import fuse.js
 import Button from "../../components/Button";
 import { DataTable } from "../../components/DataTable";
-import { products as dummyProducts } from "../../data/dummyProducts"; // Dummy data for products
 import { Product } from "../../types/Products";
 import { Minus, Plus, Trash2Icon } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useModeContext } from "../../contexts/ModeContext";
 import { InputField } from "../../components/InputField";
+import { useFetch } from "../../hooks/useFetch";
+import { LoadingIcon } from "../../components/LoadingIcon";
 
 type ProductSale = {
   id: number;
@@ -21,8 +22,9 @@ type ProductSale = {
 
 export default function Cashier() {
   const [products, setProducts] = useState<ProductSale[]>([]);
-  const [productOptions, setProductOptions] = useState<Product[]>([]);
+  const [productOptions, setProductOptions] = useState<Product[] | null>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const { get, isLoading, errorMessage } = useFetch<Product[]>();
 
   const [total, setTotal] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
@@ -39,19 +41,20 @@ export default function Cashier() {
     }
   }, [location.pathname]);
 
+  const fetchProductOptions = async () => {
+    console.log("Fetched products");
+    var result = await get("/api/products");
+    setProductOptions(result);
+  };
   // Fetch initial data for products
   useEffect(() => {
+    console.log("Fetching product options...");
     fetchProductOptions();
   }, []);
 
   useEffect(() => {
     handleAddProduct();
   }, [selectedProduct]);
-
-  const fetchProductOptions = async () => {
-    const data = dummyProducts; // Use dummy data for now
-    setProductOptions(data);
-  };
 
   const handleAddProduct = () => {
     if (!selectedProduct) return;
@@ -116,13 +119,19 @@ export default function Cashier() {
   const customFilter = (candidate: any, input: string) => {
     if (!input) return true; // Show all options if input is empty
 
-    const fuse = new Fuse(productOptions, {
+    const fuse = new Fuse(productOptions as Product[], {
       keys: ["name", "id"], // Fields to search
       threshold: 0.4, // Adjust threshold for fuzzy matching
     });
 
     const results = fuse.search(input);
     return results.some((result) => result.item.id === candidate.value);
+  };
+
+  if (isLoading) return <LoadingIcon />;
+
+  const handleSaveReceipt = () => {
+    console.log(products);
   };
 
   return (
@@ -135,7 +144,7 @@ export default function Cashier() {
 
         <Select
           className="bg-background"
-          options={productOptions.map((product) => ({
+          options={productOptions?.map((product) => ({
             value: product.id,
             label: `${product.id} - ${product.name}`,
           }))}
@@ -148,7 +157,7 @@ export default function Cashier() {
               : null
           }
           onChange={(option) => {
-            const product = productOptions.find((p) => p.id === option?.value);
+            const product = productOptions?.find((p) => p.id === option?.value);
             setSelectedProduct(product || null);
           }}
           filterOption={customFilter} // Use custom filter function
@@ -202,6 +211,7 @@ export default function Cashier() {
       {/* Product Table */}
       <div className="mb-4">
         <DataTable
+          disablePagination={true}
           columns={[
             { accessorKey: "name", header: "Nama Produk" },
             { accessorKey: "satuan", header: "Satuan" },
@@ -226,7 +236,7 @@ export default function Cashier() {
 
                   {/* Quantity Input */}
                   <InputField
-                    className=""
+                    className="w-16"
                     type="number"
                     value={row.original.quantity}
                     onChange={(e) =>
@@ -306,7 +316,7 @@ export default function Cashier() {
 
       {/* Save Button */}
       <div className="mt-4 text-center">
-        <Button variant="default" onClick={() => alert("Save & Print Receipt")}>
+        <Button variant="default" onClick={() => handleSaveReceipt()}>
           Save & Print Receipt
         </Button>
       </div>
