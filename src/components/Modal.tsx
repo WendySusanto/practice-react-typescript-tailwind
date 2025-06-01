@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from "react";
+import { twMerge } from "tailwind-merge";
 
 interface ModalProps {
   isOpen: boolean;
@@ -6,6 +7,7 @@ interface ModalProps {
   title?: string;
   description?: string;
   children: React.ReactNode;
+  className?: string;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -14,6 +16,7 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   description,
   children,
+  className = "",
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -35,10 +38,15 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-99">
+    <div
+      className={twMerge(
+        `fixed inset-0 overflow-y-auto bg-black/75 flex justify-center z-99  no-scrollbar`,
+        className
+      )}
+    >
       <div
         ref={modalRef}
-        className="bg-background-muted rounded-lg shadow-lg p-6 w-full max-w-md text-text"
+        className="bg-background-muted rounded-lg shadow-lg p-6 w-full max-w-md m-auto text-text"
       >
         {title && <h2 className="text-xl font-bold mb-4">{title}</h2>}
         {description && <p className="text-sm text-text mb-4">{description}</p>}

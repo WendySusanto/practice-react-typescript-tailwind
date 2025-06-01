@@ -26,7 +26,6 @@ export function useFetch<T>() {
       setStatusCode(null);
 
       try {
-        debugger;
         const response = await fetch(baseUrl + url, {
           method,
           headers: {
@@ -43,6 +42,8 @@ export function useFetch<T>() {
         const result =
           contentType && contentType.includes("application/json")
             ? await response.json()
+            : contentType && contentType.includes("text/plain")
+            ? await response.text()
             : null;
 
         if (!response.ok) {

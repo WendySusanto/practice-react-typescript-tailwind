@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Select from "react-select";
 import Fuse from "fuse.js"; // Import fuse.js
 import Button from "../../components/Button";
@@ -21,9 +21,38 @@ type ProductSale = {
 };
 
 export default function Cashier() {
-  const [products, setProducts] = useState<ProductSale[]>([]);
+  const [products, setProducts] = useState<ProductSale[]>([]); // Array to hold products added to the sale
   const [productOptions, setProductOptions] = useState<Product[] | null>([]);
+  const [filteredProductOptions, setFilteredProductOptions] =
+    useState(productOptions);
+  const [memberOptions, setMemberOptions] = useState<
+    { value: number; label: string }[] | null
+  >([]);
+
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedMember, setSelectedMember] = useState<{
+    value: number;
+    label: string;
+  } | null>({ value: 0, label: "Umum" });
+
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleInputChange = (input: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      if (!input) {
+        setFilteredProductOptions(productOptions);
+        return;
+      }
+      const fuse = new Fuse(productOptions as Product[], {
+        keys: ["name", "id"],
+        threshold: 0.4,
+      });
+      const results = fuse.search(input);
+      setFilteredProductOptions(results.map((r) => r.item));
+    }, 300);
+  };
+
   const { get, isLoading, errorMessage } = useFetch<Product[]>();
 
   const [total, setTotal] = useState(0);
@@ -41,15 +70,23 @@ export default function Cashier() {
     }
   }, [location.pathname]);
 
-  const fetchProductOptions = async () => {
+  const fetchData = async () => {
     console.log("Fetched products");
-    var result = await get("/api/products");
+    const result = await get("/api/products");
+    const memberData = await get("/api/members");
+
     setProductOptions(result);
+    setMemberOptions(
+      memberData?.map((member) => ({
+        value: member.id,
+        label: member.name,
+      })) || []
+    );
   };
+
   // Fetch initial data for products
   useEffect(() => {
-    console.log("Fetching product options...");
-    fetchProductOptions();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -115,18 +152,21 @@ export default function Cashier() {
     calculateTotals();
   }, [products]);
 
-  // Custom filter function using fuse.js
-  const customFilter = (candidate: any, input: string) => {
-    if (!input) return true; // Show all options if input is empty
+  // const fuse = useMemo(() => {
+  //   console.log("Fuse initialized with product options");
+  //   return new Fuse(productOptions || [], {
+  //     keys: ["name", "id"],
+  //     threshold: 0.4,
+  //   });
+  // }, [productOptions]);
 
-    const fuse = new Fuse(productOptions as Product[], {
-      keys: ["name", "id"], // Fields to search
-      threshold: 0.4, // Adjust threshold for fuzzy matching
-    });
-
-    const results = fuse.search(input);
-    return results.some((result) => result.item.id === candidate.value);
-  };
+  // // Custom filter function using fuse.js
+  // const customFilter = (candidate: any, input: string) => {
+  //   console.log("Custom filter running with input:", input);
+  //   if (!input) return true;
+  //   const results = fuse.search(input);
+  //   return results.some((result: any) => result.item.id === candidate.value);
+  // };
 
   if (isLoading) return <LoadingIcon />;
 
@@ -138,21 +178,115 @@ export default function Cashier() {
     <div className="text-text sm:p-25 p-4 bg-background h-screen">
       <h1 className="text-2xl font-bold text-secondary mb-5">Cashier</h1>
 
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <InputField
+            label="Date"
+            value={new Date().toLocaleDateString("id-ID", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              weekday: "long",
+            })}
+            name={""}
+            disabled
+            onChange={() => {}}
+          />
+        </div>
+      </div>
+
+      {/* Member Selection */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-2">Select Member</label>
+        <Select
+          className="bg-background"
+          options={memberOptions?.map((member) => ({
+            value: member.value,
+            label: `${member.label}`,
+          }))}
+          value={selectedMember}
+          onChange={(selectedOption) => {
+            const selectedMember = selectedOption as {
+              value: number;
+              label: string;
+            };
+            setSelectedMember(selectedMember);
+          }}
+          placeholder="Search member..."
+          styles={{
+            control: (base, state) => ({
+              ...base,
+              backgroundColor: "var(--color-background-muted)", // Matches your design
+              borderColor: state.isFocused
+                ? "var(--color-primary)"
+                : "var(--color-border-muted)",
+              boxShadow: state.isFocused
+                ? "0 0 0 2px var(--color-primary)"
+                : "none",
+              "&:hover": {
+                borderColor: "var(--color-primary-hover)",
+              },
+              color: "var(--color-text-primary)",
+            }),
+            menu: (base) => ({
+              ...base,
+              backgroundColor: "var(--color-background-muted)", // Matches dark mode
+              borderRadius: "0.375rem",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            }),
+            option: (base, state) => ({
+              ...base,
+              backgroundColor: state.isFocused
+                ? "var(--color-primary-light)"
+                : "var(--color-background-muted)",
+              "&:hover": {
+                backgroundColor: "var(--color-primary-light)",
+              },
+              color: "var(--color-text-secondary)",
+            }),
+            placeholder: (base) => ({
+              ...base,
+              color: "var(--color-text-muted)",
+            }),
+            singleValue: (base) => ({
+              ...base,
+              color: "var(--color-text-primary)",
+            }),
+            input: (base) => ({
+              ...base,
+              color: "var(--color-text-primary)",
+            }),
+          }}
+        />
+      </div>
+
       {/* Product Selection */}
       <div className="mb-8">
         <label className="block text-sm font-medium mb-2">Input Product</label>
 
         <Select
           className="bg-background"
-          options={productOptions?.map((product) => ({
+          options={filteredProductOptions?.map((product) => ({
             value: product.id,
-            label: `${product.id} - ${product.name}`,
+            label: `${product.id} - ${product.name} - ${
+              product.satuan
+            } - ${product.harga.toLocaleString("id-ID", {
+              style: "currency",
+              currency: "IDR",
+              minimumFractionDigits: 0,
+            })}`,
           }))}
           value={
             selectedProduct
               ? {
                   value: selectedProduct.id,
-                  label: `${selectedProduct.id} - ${selectedProduct.name}`,
+                  label: `${selectedProduct.id} - ${selectedProduct.name} - ${
+                    selectedProduct.satuan
+                  } - ${selectedProduct.harga.toLocaleString("id-ID", {
+                    style: "currency",
+                    currency: "IDR",
+                    minimumFractionDigits: 0,
+                  })}`,
                 }
               : null
           }
@@ -160,7 +294,8 @@ export default function Cashier() {
             const product = productOptions?.find((p) => p.id === option?.value);
             setSelectedProduct(product || null);
           }}
-          filterOption={customFilter} // Use custom filter function
+          onInputChange={handleInputChange}
+          filterOption={null} // Disable default filtering
           placeholder="Search or select a product"
           styles={{
             control: (base, state) => ({

@@ -19,7 +19,7 @@ export default function SideNavbar() {
       <SideNavbarItem text="Dashboard" Icon={LayoutDashboard} to="/" />
       <SideNavbarItem text="Products" Icon={ShoppingBasket} to="/products" />
       <SideNavbarItem text="Sales" Icon={DollarSignIcon} to="/sales" />
-      <SideNavbarItem text="Customers" Icon={Contact} to="/customers" />
+      <SideNavbarItem text="Members" Icon={Contact} to="/members" />
       {/* <SideNavbarItem text="Settings" Icon={Settings} to="/settings" /> */}
     </aside>
   );

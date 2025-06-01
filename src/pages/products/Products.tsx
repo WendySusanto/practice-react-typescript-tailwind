@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Product } from "../../types/Products";
+import { Product, MemberPrice, GrosirConfig } from "../../types/Products";
 import { DataTable } from "../../components/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import Button from "../../components/Button";
-import { Delete, Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { Delete, Pencil, PlusCircle, Trash2, X } from "lucide-react";
 import { Modal } from "../../components/Modal";
 import { useModal } from "../../hooks/useModal";
-import { z } from "zod"; // Import zod
+import { set, z } from "zod"; // Import zod
 import { InputField } from "../../components/InputField";
 import { AnimatedSuccessIcon } from "../../components/AnimatedSuccessIcon";
 import { LoadingIcon } from "../../components/LoadingIcon";
@@ -14,6 +14,7 @@ import { useFetch } from "../../hooks/useFetch";
 import { TextArea } from "../../components/TextArea";
 import { CSVLink } from "react-csv";
 import Papa, { ParseResult } from "papaparse";
+import Select from "react-select";
 
 // Define a zod schema for form validation
 const productSchema = z.object({
@@ -24,10 +25,117 @@ const productSchema = z.object({
   harga: z.number().min(0, "Harga must be a positive number"),
   barcode: z.string().nonempty("Barcode is required"),
   note: z.string().optional(),
+  expired: z.string().optional(),
+  member_prices: z
+    .array(
+      z.object({
+        member_id: z.number().min(1, "Member ID can't be 'Umum'"),
+        member_name: z.string().min(1, "Member name is required"),
+        harga: z.number().min(0, "Member price must be a positive number"),
+      })
+    )
+    .optional()
+    .refine(
+      (arr) =>
+        !arr || arr.length === new Set(arr.map((mp) => mp.member_id)).size,
+      {
+        message: "Member price must be unique per member",
+        path: ["member_prices"],
+      }
+    ),
+  harga_grosir: z
+    .array(
+      z.object({
+        min_qty: z.number().min(2, "Minimum quantity must be > 1"),
+        harga: z.number().min(0, "Grosir price must be a positive number"),
+      })
+    )
+    .optional()
+    .refine(
+      (arr) => !arr || arr.length === new Set(arr.map((hg) => hg.min_qty)).size,
+      {
+        message: "Harga grosir must be unique per minimum quantity",
+        path: ["harga_grosir"],
+      }
+    ),
 });
 
 export default function Products() {
-  console.log("Products page loaded");
+  const [memberOptions, setMemberOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
+  const {
+    isOpen: isAddModalOpen,
+    openModal: openAddModal,
+    closeModal: closeAddModal,
+  } = useModal();
+  const {
+    isOpen: isSuccessModalOpen,
+    openModal: openSuccessModal,
+    closeModal: closeSuccessModal,
+  } = useModal();
+
+  const {
+    isOpen: isEditModalOpen,
+    openModal: openEditModal,
+    closeModal: closeEditModal,
+  } = useModal();
+
+  const {
+    isOpen: isDeleteModalOpen,
+    openModal: openDeleteModal,
+    closeModal: closeDeleteModal,
+  } = useModal();
+
+  const [formData, setFormData] = useState({
+    id: 0,
+    name: "",
+    satuan: "",
+    modal: "",
+    harga: "",
+    barcode: "",
+    expired: "",
+    note: "",
+    member_prices: [] as MemberPrice[],
+    harga_grosir: [] as GrosirConfig[],
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [data, setData] = useState<Product[]>([]);
+
+  const {
+    get,
+    post,
+    patch,
+    del,
+    isError,
+    isLoading,
+    errorMessage,
+    statusCode,
+  } = useFetch<Product[]>();
+
+  const fetchData = async () => {
+    const data = await get("/api/products", { Authorization: "Bearer test" });
+    const memberData = await get("/api/members");
+
+    if (memberData) {
+      const options = memberData
+        .map((member) => ({
+          value: member.id,
+          label: member.name,
+        }))
+        .filter((option) => option.value !== 0 && option.label !== "");
+
+      setMemberOptions(options);
+    }
+
+    if (data) {
+      setData(data);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const productColumns: ColumnDef<Product>[] = [
     {
@@ -71,6 +179,36 @@ export default function Products() {
       },
     },
     {
+      accessorKey: "harga_grosir",
+      header: "Harga Grosir",
+      cell: ({ row }) => (
+        <div>
+          {(row.original.harga_grosir || []).map(
+            (hg: GrosirConfig, idx: number) => (
+              <div key={idx} className="whitespace-nowrap">
+                {`≥${hg.min_qty} : ${hg.harga}`}
+              </div>
+            )
+          )}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "member_prices",
+      header: "Harga Member",
+      cell: ({ row }) => (
+        <div>
+          {(row.original.member_prices || []).map(
+            (mp: MemberPrice, idx: number) => (
+              <div key={idx} className="whitespace-nowrap">
+                {`${mp.member_name} : ${mp.harga.toLocaleString("id-ID")}`}
+              </div>
+            )
+          )}
+        </div>
+      ),
+    },
+    {
       header: "Edit",
       cell: ({ row }) => {
         return (
@@ -99,60 +237,12 @@ export default function Products() {
     },
   ];
 
-  const {
-    isOpen: isAddModalOpen,
-    openModal: openAddModal,
-    closeModal: closeAddModal,
-  } = useModal();
-  const {
-    isOpen: isSuccessModalOpen,
-    openModal: openSuccessModal,
-    closeModal: closeSuccessModal,
-  } = useModal();
-
-  const {
-    isOpen: isEditModalOpen,
-    openModal: openEditModal,
-    closeModal: closeEditModal,
-  } = useModal();
-
-  const {
-    isOpen: isDeleteModalOpen,
-    openModal: openDeleteModal,
-    closeModal: closeDeleteModal,
-  } = useModal();
-
-  const [formData, setFormData] = useState({
-    id: 0,
-    name: "",
-    satuan: "",
-    modal: "",
-    harga: "",
-    barcode: "",
-    expired: "",
-    note: "",
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [data, setData] = useState<Product[]>([]);
-
-  const {
-    get,
-    post,
-    patch,
-    del,
-    isError,
-    isLoading,
-    errorMessage,
-    statusCode,
-  } = useFetch<Product[]>();
-
   const csvData = data.map((row) => ({
     ...row,
     name: escapeCsvField(row.name),
     satuan: escapeCsvField(row.satuan),
     barcode: escapeCsvField(row.barcode),
     note: escapeCsvField(row.note),
-    // Add other fields as needed
   }));
 
   function escapeCsvField(field: string) {
@@ -163,16 +253,25 @@ export default function Products() {
     return escaped;
   }
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const data = await get("/api/products", { Authorization: "Bearer test" });
-      if (data) {
-        setData(data);
+  function getDuplicateIndexes(
+    arr: { member_id?: number; min_qty?: number }[],
+    key: "member_id" | "min_qty"
+  ) {
+    const seen = new Map<number, number>();
+    const duplicates: number[] = [];
+    arr.forEach((item, idx) => {
+      const value = item[key];
+      if (typeof value === "number") {
+        if (seen.has(value)) {
+          duplicates.push(idx);
+        } else {
+          seen.set(value, idx);
+        }
       }
-    };
+    });
 
-    fetchData();
-  }, []);
+    return duplicates;
+  }
 
   if (isLoading) {
     return <LoadingIcon />;
@@ -184,6 +283,15 @@ export default function Products() {
       </div>
     );
   }
+
+  const duplicateMemberIndexes = getDuplicateIndexes(
+    formData.member_prices,
+    "member_id"
+  );
+  const duplicateGrosirIndexes = getDuplicateIndexes(
+    formData.harga_grosir,
+    "min_qty"
+  );
 
   // Import handler
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,11 +310,9 @@ export default function Products() {
         flag: true,
       },
       complete: async (results: ParseResult<Product>) => {
-        console.log("Parsed CSV data:", results.data);
-
         await post("/api/products/import", results.data);
 
-        setData(() => [...results.data]);
+        fetchData();
 
         openSuccessModal();
       },
@@ -237,6 +343,8 @@ export default function Products() {
         barcode: "",
         expired: "",
         note: "",
+        member_prices: [],
+        harga_grosir: [],
       });
       setErrors({}); // Clear errors on successful submission
     } catch (error) {
@@ -270,6 +378,8 @@ export default function Products() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault(); // Prevent default form submission
     try {
+      console.log("Saving product:", formData);
+
       // Validate form data using zod
       const validatedData = productSchema.parse({
         ...formData,
@@ -283,7 +393,6 @@ export default function Products() {
         Authorization: "Bearer test",
       });
 
-      // Optionally, you can update the data state here to reflect the new product
       setData((prev) => [...prev, validatedData as Product]);
 
       closeAddModal();
@@ -297,6 +406,8 @@ export default function Products() {
         barcode: "",
         expired: "",
         note: "",
+        member_prices: [],
+        harga_grosir: [],
       });
       setErrors({}); // Clear errors on successful submission
     } catch (error) {
@@ -305,7 +416,14 @@ export default function Products() {
         console.log(error);
         const fieldErrors: Record<string, string> = {};
         error.errors.forEach((err) => {
-          if (err.path[0]) {
+          if (err.path.length > 1) {
+            // Remove consecutive duplicate keys in the path
+            const dedupedPath = err.path.filter(
+              (segment, index, pathArr) =>
+                index === 0 || segment !== pathArr[index - 1]
+            );
+            fieldErrors[dedupedPath.join("_")] = err.message;
+          } else {
             fieldErrors[err.path[0] as string] = err.message;
           }
         });
@@ -318,7 +436,6 @@ export default function Products() {
   };
 
   const handleEdit = (row: Product) => {
-    console.log("Editing product:", row);
     setFormData({
       id: Number(row.id),
       name: row.name,
@@ -328,6 +445,8 @@ export default function Products() {
       barcode: row.barcode,
       expired: row.expired,
       note: row.note,
+      member_prices: row.member_prices || [],
+      harga_grosir: row.harga_grosir || [],
     });
     openEditModal();
   };
@@ -342,6 +461,8 @@ export default function Products() {
       barcode: String(row.barcode),
       expired: row.expired,
       note: row.note,
+      member_prices: row.member_prices || [],
+      harga_grosir: row.harga_grosir || [],
     });
     openDeleteModal();
   };
@@ -383,6 +504,8 @@ export default function Products() {
         barcode: "",
         expired: "",
         note: "",
+        member_prices: [],
+        harga_grosir: [],
       });
       setErrors({}); // Clear errors on successful submission
     } catch (error) {
@@ -391,7 +514,14 @@ export default function Products() {
         console.log(error);
         const fieldErrors: Record<string, string> = {};
         error.errors.forEach((err) => {
-          if (err.path[0]) {
+          if (err.path.length > 1) {
+            // Remove consecutive duplicate keys in the path
+            const dedupedPath = err.path.filter(
+              (segment, index, pathArr) =>
+                index === 0 || segment !== pathArr[index - 1]
+            );
+            fieldErrors[dedupedPath.join("_")] = err.message;
+          } else {
             fieldErrors[err.path[0] as string] = err.message;
           }
         });
@@ -437,6 +567,7 @@ export default function Products() {
         </div>
       </div>
       <Modal
+        className="overflow-y-auto"
         description="Fill in the product details below."
         title="Add Product"
         isOpen={isAddModalOpen}
@@ -502,8 +633,236 @@ export default function Products() {
             error={errors.note}
           />
 
+          <div>
+            <label className="block font-semibold mb-1">Harga Grosir</label>
+            {formData.harga_grosir.map((hg, idx) => (
+              <>
+                <div key={idx} className="flex gap-2 mb-2 items-end">
+                  <InputField
+                    type="number"
+                    min={0}
+                    label="Min Qty (≥)"
+                    name={`minQty-${idx}`}
+                    value={hg.min_qty}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setFormData((prev) => {
+                        const next = [...prev.harga_grosir];
+                        next[idx] = { ...next[idx], min_qty: val };
+                        return { ...prev, harga_grosir: next };
+                      });
+                    }}
+                  />
+                  <InputField
+                    type="number"
+                    min={1}
+                    label="Harga"
+                    name={`price-${idx}`}
+                    value={hg.harga}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setFormData((prev) => {
+                        const next = [...prev.harga_grosir];
+                        next[idx] = { ...next[idx], harga: val };
+                        return { ...prev, harga_grosir: next };
+                      });
+                    }}
+                  />
+                  <Button
+                    size={"sm"}
+                    className="h-8"
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        harga_grosir: prev.harga_grosir.filter(
+                          (_, i) => i !== idx
+                        ),
+                      }));
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                {errors[`harga_grosir_${idx}_min_qty`] && (
+                  <p className="text-red-500 text-sm">
+                    {errors[`harga_grosir_${idx}_min_qty`]}
+                  </p>
+                )}
+
+                {duplicateGrosirIndexes.includes(idx) && (
+                  <p className="text-red-500 text-sm">{errors.harga_grosir}</p>
+                )}
+              </>
+            ))}
+            <Button
+              type="button"
+              size={"sm"}
+              onClick={() =>
+                setFormData((prev) => ({
+                  ...prev,
+                  harga_grosir: [
+                    ...prev.harga_grosir,
+                    { min_qty: 0, harga: prev.harga ? Number(prev.harga) : 0 },
+                  ],
+                }))
+              }
+            >
+              Tambah Harga Grosir
+            </Button>
+          </div>
+
+          <div>
+            <label className="block font-semibold mb-1">Harga Member</label>
+            {formData.member_prices.map((mp, idx) => (
+              <>
+                <div key={idx} className="flex gap-2 mb-2 items-end">
+                  <div className="flex flex-col w-full">
+                    <label className="block text-sm font-medium text-text">
+                      Member
+                    </label>
+                    <Select
+                      className="bg-background"
+                      options={memberOptions?.map((member) => ({
+                        value: member.value,
+                        label: `${member.label}`,
+                      }))}
+                      value={memberOptions.find(
+                        (option) => option.value === mp.member_id
+                      )}
+                      onChange={(selectedOption) => {
+                        const selectedMember = selectedOption as {
+                          value: number;
+                          label: string;
+                        };
+                        setFormData((prev) => {
+                          const next = [...prev.member_prices];
+                          next[idx] = {
+                            ...next[idx],
+                            member_id: selectedMember.value,
+                            member_name: selectedMember.label,
+                          };
+                          return { ...prev, member_prices: next };
+                        });
+                      }}
+                      placeholder="Search member..."
+                      styles={{
+                        control: (base, state) => ({
+                          ...base,
+                          backgroundColor: "var(--color-background-muted)", // Matches your design
+                          borderColor: state.isFocused
+                            ? "var(--color-primary)"
+                            : "var(--color-border-muted)",
+                          boxShadow: state.isFocused
+                            ? "0 0 0 2px var(--color-primary)"
+                            : "none",
+                          "&:hover": {
+                            borderColor: "var(--color-primary-hover)",
+                          },
+                          color: "var(--color-text-primary)",
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          backgroundColor: "var(--color-background-muted)", // Matches dark mode
+                          borderRadius: "0.375rem",
+                          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                        }),
+                        option: (base, state) => ({
+                          ...base,
+                          backgroundColor: state.isFocused
+                            ? "var(--color-primary-light)"
+                            : "var(--color-background-muted)",
+                          "&:hover": {
+                            backgroundColor: "var(--color-primary-light)",
+                          },
+                          color: "var(--color-text-secondary)",
+                        }),
+                        placeholder: (base) => ({
+                          ...base,
+                          color: "var(--color-text-muted)",
+                        }),
+                        singleValue: (base) => ({
+                          ...base,
+                          color: "var(--color-text-primary)",
+                        }),
+                        input: (base) => ({
+                          ...base,
+                          color: "var(--color-text-primary)",
+                        }),
+                      }}
+                    />
+                  </div>
+                  <InputField
+                    type="number"
+                    min={1}
+                    label="Harga"
+                    name={`member-harga-${idx}`}
+                    value={mp.harga}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setFormData((prev) => {
+                        const next = [...prev.member_prices];
+                        next[idx] = { ...next[idx], harga: val };
+
+                        return { ...prev, member_prices: next };
+                      });
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    className="h-8 self-end"
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        member_prices: prev.member_prices.filter(
+                          (_, i) => i !== idx
+                        ),
+                      }));
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                {errors[`member_prices_${idx}_member_name`] && (
+                  <p className="text-red-500 text-sm">
+                    {errors[`member_prices_${idx}_member_name`]}
+                  </p>
+                )}
+                {duplicateMemberIndexes.includes(idx) && (
+                  <p className="text-red-500 text-sm">{errors.member_prices}</p>
+                )}
+              </>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              className="mt-2"
+              onClick={() =>
+                setFormData((prev) => ({
+                  ...prev,
+                  member_prices: [
+                    ...prev.member_prices,
+                    {
+                      member_id: 0,
+                      member_name: "",
+                      harga: prev.harga ? Number(prev.harga) : 0,
+                    },
+                  ],
+                }))
+              }
+            >
+              Tambah Harga Member
+            </Button>
+          </div>
+
           <div className="flex justify-end gap-2">
-            <Button onClick={closeAddModal} variant="outline" size="md">
+            <Button
+              type="button"
+              onClick={closeAddModal}
+              variant="outline"
+              size="md"
+            >
               Cancel
             </Button>
             <Button type="submit" variant="default" size="md">
@@ -597,8 +956,250 @@ export default function Products() {
             error={errors.note}
           />
 
+          <div>
+            <label className="block font-semibold mb-1">Harga Grosir</label>
+            {formData.harga_grosir.map((hg, idx) => (
+              <>
+                <div key={idx} className="flex gap-2 mb-2 items-end">
+                  <InputField
+                    type="number"
+                    min={0}
+                    label="Min Qty (≥)"
+                    name={`minQty-${idx}`}
+                    value={hg.min_qty}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setFormData((prev) => {
+                        const next = [...prev.harga_grosir];
+                        next[idx] = { ...next[idx], min_qty: val };
+                        return { ...prev, harga_grosir: next };
+                      });
+                    }}
+                  />
+                  <InputField
+                    type="number"
+                    min={1}
+                    label="Harga"
+                    name={`price-${idx}`}
+                    value={hg.harga}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setFormData((prev) => {
+                        const next = [...prev.harga_grosir];
+                        next[idx] = { ...next[idx], harga: val };
+                        return { ...prev, harga_grosir: next };
+                      });
+                    }}
+                  />
+                  <Button
+                    size={"sm"}
+                    className="h-8"
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        harga_grosir: prev.harga_grosir.filter(
+                          (_, i) => i !== idx
+                        ),
+                      }));
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                {errors[`harga_grosir_${idx}_min_qty`] && (
+                  <p className="text-red-500 text-sm">
+                    {errors[`harga_grosir_${idx}_min_qty`]}
+                  </p>
+                )}
+
+                {duplicateGrosirIndexes.includes(idx) && (
+                  <p className="text-red-500 text-sm">{errors.harga_grosir}</p>
+                )}
+              </>
+            ))}
+            <Button
+              type="button"
+              size={"sm"}
+              onClick={() =>
+                setFormData((prev) => ({
+                  ...prev,
+                  harga_grosir: [
+                    ...prev.harga_grosir,
+                    { min_qty: 0, harga: prev.harga ? Number(prev.harga) : 0 },
+                  ],
+                }))
+              }
+            >
+              Tambah Harga Grosir
+            </Button>
+          </div>
+
+          <div>
+            <label className="block font-semibold mb-1">Harga Member</label>
+            {formData.member_prices.map((mp, idx) => (
+              <>
+                <div key={idx} className="flex gap-2 mb-2 items-end">
+                  <div className="flex flex-col w-full">
+                    <label className="block text-sm font-medium text-text">
+                      Member
+                    </label>
+                    <Select
+                      className="bg-background"
+                      options={memberOptions?.map((member) => ({
+                        value: member.value,
+                        label: `${member.label}`,
+                      }))}
+                      value={memberOptions.find(
+                        (option) => option.value === mp.member_id
+                      )}
+                      onChange={(selectedOption) => {
+                        const selectedMember = selectedOption as {
+                          value: number;
+                          label: string;
+                        };
+                        setFormData((prev) => {
+                          const next = [...prev.member_prices];
+                          next[idx] = {
+                            ...next[idx],
+                            member_id: selectedMember.value,
+                            member_name: selectedMember.label,
+                          };
+                          return { ...prev, member_prices: next };
+                        });
+                      }}
+                      placeholder="Search member..."
+                      styles={{
+                        control: (base, state) => ({
+                          ...base,
+                          backgroundColor: "var(--color-background-muted)", // Matches your design
+                          borderColor: state.isFocused
+                            ? "var(--color-primary)"
+                            : "var(--color-border-muted)",
+                          boxShadow: state.isFocused
+                            ? "0 0 0 2px var(--color-primary)"
+                            : "none",
+                          "&:hover": {
+                            borderColor: "var(--color-primary-hover)",
+                          },
+                          color: "var(--color-text-primary)",
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          backgroundColor: "var(--color-background-muted)", // Matches dark mode
+                          borderRadius: "0.375rem",
+                          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                        }),
+                        option: (base, state) => ({
+                          ...base,
+                          backgroundColor: state.isFocused
+                            ? "var(--color-primary-light)"
+                            : "var(--color-background-muted)",
+                          "&:hover": {
+                            backgroundColor: "var(--color-primary-light)",
+                          },
+                          color: "var(--color-text-secondary)",
+                        }),
+                        placeholder: (base) => ({
+                          ...base,
+                          color: "var(--color-text-muted)",
+                        }),
+                        singleValue: (base) => ({
+                          ...base,
+                          color: "var(--color-text-primary)",
+                        }),
+                        input: (base) => ({
+                          ...base,
+                          color: "var(--color-text-primary)",
+                        }),
+                      }}
+                    />
+                  </div>
+                  <InputField
+                    type="number"
+                    min={1}
+                    label="Harga"
+                    name={`member-harga-${idx}`}
+                    value={mp.harga}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setFormData((prev) => {
+                        const next = [...prev.member_prices];
+                        next[idx] = { ...next[idx], harga: val };
+
+                        return { ...prev, member_prices: next };
+                      });
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    className="h-8 self-end"
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        member_prices: prev.member_prices.filter(
+                          (_, i) => i !== idx
+                        ),
+                      }));
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                {errors[`member_prices_${idx}_member_name`] && (
+                  <p className="text-red-500 text-sm">
+                    {errors[`member_prices_${idx}_member_name`]}
+                  </p>
+                )}
+                {duplicateMemberIndexes.includes(idx) && (
+                  <p className="text-red-500 text-sm">{errors.member_prices}</p>
+                )}
+              </>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              className="mt-2"
+              onClick={() =>
+                setFormData((prev) => ({
+                  ...prev,
+                  member_prices: [
+                    ...prev.member_prices,
+                    {
+                      member_id: 0,
+                      member_name: "",
+                      harga: prev.harga ? Number(prev.harga) : 0,
+                    },
+                  ],
+                }))
+              }
+            >
+              Tambah Harga Member
+            </Button>
+          </div>
+
           <div className="flex justify-end gap-2">
-            <Button onClick={closeEditModal} variant="outline" size="md">
+            <Button
+              onClick={() => {
+                closeEditModal();
+                setFormData({
+                  id: 0,
+                  name: "",
+                  satuan: "",
+                  modal: "",
+                  harga: "",
+                  barcode: "",
+                  expired: "",
+                  note: "",
+                  member_prices: [],
+                  harga_grosir: [],
+                });
+                setErrors({});
+              }}
+              variant="outline"
+              size="md"
+            >
               Cancel
             </Button>
             <Button type="submit" variant="default" size="md">

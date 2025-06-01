@@ -1,7 +1,12 @@
-export type Member = {
-  id: number;
-  name: string;
-  harga_member: number;
+export type MemberPrice = {
+  member_id: number;
+  member_name: string;
+  harga: number;
+};
+
+export type GrosirConfig = {
+  min_qty: number;
+  harga: number;
 };
 
 export type Product = {
@@ -13,4 +18,6 @@ export type Product = {
   expired: string;
   barcode: string;
   note: string;
+  member_prices?: MemberPrice[];
+  harga_grosir?: GrosirConfig[];
 };
