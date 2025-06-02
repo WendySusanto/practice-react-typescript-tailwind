@@ -6,7 +6,8 @@ interface InputFieldProps {
   name: string;
   type?: string;
   value: string | number;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
   error?: string;
 }
 
@@ -16,6 +17,7 @@ export function InputField({
   type = "text",
   value,
   onChange,
+  onFocus,
   error,
   className,
   ...props
@@ -29,6 +31,7 @@ export function InputField({
         name={name}
         value={value}
         onChange={onChange}
+        onFocus={onFocus}
         className={twMerge(
           `w-full border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-secondary ${
             error ? "border-red-500" : "text-text"

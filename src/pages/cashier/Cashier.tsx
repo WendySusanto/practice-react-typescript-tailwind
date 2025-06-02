@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Select from "react-select";
 import Button from "../../components/Button";
 import { DataTable } from "../../components/DataTable";
@@ -10,16 +10,87 @@ import { LoadingIcon } from "../../components/LoadingIcon";
 import { useFetch } from "../../hooks/useFetch";
 import { useProductSearch } from "../../hooks/useProductSearch";
 import { useProductManagement } from "../../hooks/useProductManagement";
-import { useHargaSatuan } from "../../hooks/useHargaSatuan";
 import { MemberOption, ProductSale } from "../../types/Cashier";
 import { Product } from "../../types/Products";
+import { Input } from "react-select/animated";
+import { ColumnDef } from "@tanstack/react-table";
+import { HargaCell } from "../../components/HargaCell";
 
 type Member = {
   id: number;
   name: string;
 };
 
+// Memoize the cell components
+const QuantityCell = React.memo(
+  ({
+    row,
+    handleQuantityChange,
+  }: {
+    row: { original: ProductSale };
+    handleQuantityChange: (id: number, quantity: number) => void;
+  }) => (
+    <div className="flex items-center gap-2">
+      <Button
+        variant="outline"
+        onClick={() =>
+          handleQuantityChange(row.original.id, row.original.quantity - 1)
+        }
+        disabled={row.original.quantity <= 1}
+      >
+        <Minus className="w-4 h-4 mx-auto" />
+      </Button>
+      <InputField
+        className="w-16"
+        type="number"
+        value={row.original.quantity}
+        onChange={(e) => handleQuantityChange(row.original.id, +e.target.value)}
+        min={1}
+        label=""
+        name=""
+      />
+      <Button
+        variant="outline"
+        onClick={() =>
+          handleQuantityChange(row.original.id, row.original.quantity + 1)
+        }
+      >
+        <Plus className="w-4 h-4 mx-auto" />
+      </Button>
+    </div>
+  )
+);
+
+const SubTotalCell = React.memo(({ row }: { row: { original: ProductSale } }) =>
+  row.original.subTotal.toLocaleString("id-ID", {
+    style: "currency",
+    currency: "IDR",
+  })
+);
+
+const ActionsCell = React.memo(
+  ({
+    row,
+    handleRemoveProduct,
+  }: {
+    row: { original: ProductSale };
+    handleRemoveProduct: (id: number) => void;
+  }) => (
+    <button
+      onClick={() => handleRemoveProduct(row.original.id)}
+      className="text-red-500 cursor-pointer hover:text-red-700"
+    >
+      <Trash2Icon className="w-4 h-4" />
+    </button>
+  )
+);
+
+// Memoize the DataTable component with proper typing
+const MemoizedDataTable = React.memo(DataTable) as typeof DataTable;
+
 export default function Cashier() {
+  console.log("Cashier component rendering");
+
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedMember, setSelectedMember] = useState<MemberOption | null>({
     value: 0,
@@ -49,12 +120,24 @@ export default function Cashier() {
     fetchProducts,
   } = useProductSearch();
 
-  const {
-    hargaSatuanStates,
-    handleHargaSatuanFocus,
-    handleHargaSatuanChange,
-    handleHargaSatuanBlur,
-  } = useHargaSatuan(products, setProducts);
+  const handleHargaChange = useCallback(
+    (id: number, newHarga: number) => {
+      setProducts((prevProducts) =>
+        prevProducts.map((p) => {
+          if (p.id === id) {
+            return {
+              ...p,
+              manualHargaSatuan: newHarga,
+              harga: newHarga,
+              subTotal: p.quantity * newHarga,
+            };
+          }
+          return p;
+        })
+      );
+    },
+    [setProducts]
+  );
 
   useEffect(() => {
     if (location.pathname === "/cashier") {
@@ -84,11 +167,77 @@ export default function Cashier() {
     handleAddProduct(selectedProduct);
   }, [selectedProduct]);
 
-  if (isLoading) return <LoadingIcon />;
+  useEffect(() => {
+    console.log("products changed:", products);
+  }, [products]);
+
+  useEffect(() => {
+    console.log("selectedMember changed:", selectedMember);
+  }, [selectedMember]);
 
   const handleSaveReceipt = () => {
     console.log(products);
   };
+
+  const renderHargaCell = useCallback(
+    ({ row }: { row: { original: ProductSale } }) => (
+      <HargaCell
+        row={row}
+        selectedMember={selectedMember}
+        onHargaChange={handleHargaChange}
+      />
+    ),
+    [selectedMember, handleHargaChange]
+  );
+
+  const renderQuantityCell = useCallback(
+    ({ row }: { row: { original: ProductSale } }) => (
+      <QuantityCell row={row} handleQuantityChange={handleQuantityChange} />
+    ),
+    [handleQuantityChange]
+  );
+
+  const renderSubTotalCell = useCallback(
+    ({ row }: { row: { original: ProductSale } }) => <SubTotalCell row={row} />,
+    []
+  );
+
+  const renderActionsCell = useCallback(
+    ({ row }: { row: { original: ProductSale } }) => (
+      <ActionsCell row={row} handleRemoveProduct={handleRemoveProduct} />
+    ),
+    [handleRemoveProduct]
+  );
+
+  const columns = useMemo<ColumnDef<ProductSale>[]>(
+    () => [
+      { accessorKey: "name", header: "Nama Produk" },
+      { accessorKey: "satuan", header: "Satuan" },
+      {
+        accessorKey: "quantity",
+        header: "Qty",
+        cell: renderQuantityCell,
+      },
+      {
+        accessorKey: "harga",
+        header: "Harga Satuan",
+        cell: renderHargaCell,
+      },
+      {
+        accessorKey: "subTotal",
+        header: "Sub Total",
+        cell: renderSubTotalCell,
+      },
+      {
+        accessorKey: "actions",
+        header: "",
+        cell: renderActionsCell,
+      },
+    ],
+    [renderQuantityCell, renderHargaCell, renderSubTotalCell, renderActionsCell]
+  );
+
+  if (isLoading) return <LoadingIcon />;
 
   return (
     <div className="text-text sm:p-25 p-4 bg-background h-screen">
@@ -104,7 +253,7 @@ export default function Cashier() {
               day: "numeric",
               weekday: "long",
             })}
-            name={""}
+            name=""
             disabled
             onChange={() => {}}
           />
@@ -257,149 +406,9 @@ export default function Cashier() {
 
       {/* Product Table */}
       <div className="mb-4">
-        <DataTable
+        <MemoizedDataTable
           disablePagination={true}
-          columns={[
-            { accessorKey: "name", header: "Nama Produk" },
-            { accessorKey: "satuan", header: "Satuan" },
-            {
-              accessorKey: "quantity",
-              header: "Qty",
-              cell: ({ row }: { row: { original: ProductSale } }) => (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      handleQuantityChange(
-                        row.original.id,
-                        row.original.quantity - 1
-                      )
-                    }
-                    disabled={row.original.quantity <= 1}
-                  >
-                    <Minus className="w-4 h-4 mx-auto" />
-                  </Button>
-                  <InputField
-                    className="w-16"
-                    type="number"
-                    value={row.original.quantity}
-                    onChange={(e) =>
-                      handleQuantityChange(row.original.id, +e.target.value)
-                    }
-                    min={1}
-                    label={""}
-                    name={""}
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      handleQuantityChange(
-                        row.original.id,
-                        row.original.quantity + 1
-                      )
-                    }
-                  >
-                    <Plus className=" w-4 h-4 mx-auto" />
-                  </Button>
-                </div>
-              ),
-            },
-            {
-              accessorKey: "harga",
-              header: "Harga Satuan",
-              cell: ({ row }: { row: { original: ProductSale } }) => {
-                const editingState = hargaSatuanStates[row.original.id];
-                const displayValue = editingState?.isEditing
-                  ? editingState.inputValue
-                  : row.original.harga.toString();
-
-                // Determine price type
-                let priceType = "regular";
-                if (row.original.manualHargaSatuan !== undefined) {
-                  priceType = "manual";
-                } else if (
-                  selectedMember?.value !== 0 &&
-                  row.original.member_prices?.find(
-                    (mp) => mp.member_id === selectedMember?.value
-                  )
-                ) {
-                  priceType = "member";
-                } else if (
-                  selectedMember?.value === 0 &&
-                  row.original.harga_grosir?.some(
-                    (hg) => row.original.quantity >= hg.min_qty
-                  )
-                ) {
-                  priceType = "grosir";
-                }
-
-                return (
-                  <div className="flex items-center gap-2">
-                    <InputField
-                      className="w-24"
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      value={displayValue}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9]/g, "");
-                        handleHargaSatuanChange(row.original.id, value);
-                      }}
-                      onFocus={() =>
-                        handleHargaSatuanFocus(
-                          row.original.id,
-                          row.original.harga
-                        )
-                      }
-                      onBlur={() => handleHargaSatuanBlur(row.original.id)}
-                      label={""}
-                      name={""}
-                    />
-                    {priceType !== "regular" && (
-                      <span
-                        className={`text-xs px-2 py-1 rounded ${
-                          priceType === "member"
-                            ? "bg-blue-100 text-blue-800"
-                            : priceType === "grosir"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {priceType === "member"
-                          ? "Member"
-                          : priceType === "grosir"
-                          ? "Grosir"
-                          : "Manual"}
-                      </span>
-                    )}
-                  </div>
-                );
-              },
-            },
-            {
-              accessorKey: "subTotal",
-              header: "Sub Total",
-              cell: ({ getValue }) => {
-                const value = getValue() as number;
-                return value.toLocaleString("id-ID", {
-                  style: "currency",
-                  currency: "IDR",
-                });
-              },
-            },
-            {
-              accessorKey: "actions",
-              header: "",
-              cell: ({ row }: { row: { original: ProductSale } }) => (
-                <button
-                  onClick={() => handleRemoveProduct(row.original.id)}
-                  className="text-red-500 cursor-pointer hover:text-red-700"
-                >
-                  <Trash2Icon className="w-4 h-4" />
-                </button>
-              ),
-            },
-          ]}
+          columns={columns}
           data={products}
           disableSearch={true}
         />
