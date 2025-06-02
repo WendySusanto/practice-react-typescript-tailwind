@@ -1,21 +1,21 @@
 import "./App.css";
 import Wrapper from "./components/Wrapper";
 import { ModeProvider } from "./contexts/ModeContext";
-
+import { ToastProvider } from "./contexts/ToastContext";
 import { SideBarProvider } from "./contexts/SidebarContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
 function App() {
   return (
-    <>
-      <SideBarProvider>
-        <ThemeProvider>
-          <ModeProvider>
+    <SideBarProvider>
+      <ThemeProvider>
+        <ModeProvider>
+          <ToastProvider>
             <Wrapper />
-          </ModeProvider>
-        </ThemeProvider>
-      </SideBarProvider>
-    </>
+          </ToastProvider>
+        </ModeProvider>
+      </ThemeProvider>
+    </SideBarProvider>
   );
 }
 

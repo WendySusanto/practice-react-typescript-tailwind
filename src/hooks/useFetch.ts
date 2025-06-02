@@ -7,7 +7,7 @@ interface FetchParam {
   headers?: HeadersInit;
 }
 
-export function useFetch<T>() {
+export const useFetch = <T = any>() => {
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -97,4 +97,4 @@ export function useFetch<T>() {
     del,
     patch,
   };
-}
+};

@@ -1,4 +1,5 @@
 import React, { ComponentProps } from "react";
+import { twMerge } from "tailwind-merge";
 
 interface InputFieldProps {
   label: string;
@@ -16,6 +17,7 @@ export function InputField({
   value,
   onChange,
   error,
+  className,
   ...props
 }: InputFieldProps & ComponentProps<"input">) {
   return (
@@ -27,9 +29,12 @@ export function InputField({
         name={name}
         value={value}
         onChange={onChange}
-        className={`w-full border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-secondary ${
-          error ? "border-red-500" : "text-text"
-        }`}
+        className={twMerge(
+          `w-full border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-secondary ${
+            error ? "border-red-500" : "text-text"
+          }`,
+          className
+        )}
       />
       {error && <p className="text-red-500 text-sm">{error}</p>}
     </div>

@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { IDLE_NAVIGATION, Route, Routes, useNavigate } from "react-router-dom";
 import Dashboard from "../pages/dashboard/Dashboard";
 import SideNavbar from "./SideNavbar";
 import { useSideBarContext } from "../contexts/SidebarContext";
@@ -9,10 +9,20 @@ import NotFound from "../pages/error/NotFound";
 import SalesDetail from "../pages/sales/SalesDetail";
 import FullInvoiceView from "../pages/sales/FullInvoiceView";
 import Member from "../pages/member/Member";
+import { useEffect } from "react";
+import { useModeContext } from "../contexts/ModeContext";
 
 export default function MainContent() {
   const { isExpanded } = useSideBarContext();
+  const { toggleAdmin, isAdminMode } = useModeContext();
+  const navigate = useNavigate();
 
+  useEffect(() => {
+    console.log("isAdminMode:", isAdminMode);
+    if (isAdminMode) {
+      navigate("/cashier");
+    }
+  }, [isAdminMode, navigate]);
   return (
     <div>
       <SideNavbar />

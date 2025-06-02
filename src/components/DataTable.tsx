@@ -31,6 +31,8 @@ export function DataTable<TData, TValue>({
   disableSearch = false,
   disablePagination = false,
 }: DataTableProps<TData, TValue>) {
+  console.log("Data Table rerendered");
+
   const [globalFilter, setGlobalFilter] = useState("");
 
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);

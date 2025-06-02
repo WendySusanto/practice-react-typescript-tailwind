@@ -7,6 +7,7 @@ import Cashier from "../pages/cashier/Cashier";
 
 export default function Wrapper() {
   const { isDark } = useThemeContext();
+  
   return (
     <div className={`${isDark ? "dark" : "light"}`}>
       <Header />

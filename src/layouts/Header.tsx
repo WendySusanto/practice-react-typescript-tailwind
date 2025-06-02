@@ -16,6 +16,7 @@ export default function Header() {
   const handleAdminToggle = () => {
     toggleAdmin(); // Toggle admin mode
     if (!isAdminMode) {
+      console.log("Entering admin mode");
       navigate("/cashier"); // Navigate to /cashier if entering admin mode
     } else {
       navigate("/"); // Navigate back to the main route if exiting admin mode

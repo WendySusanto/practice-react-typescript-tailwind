@@ -1,172 +1,88 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Select from "react-select";
-import Fuse from "fuse.js"; // Import fuse.js
 import Button from "../../components/Button";
 import { DataTable } from "../../components/DataTable";
-import { Product } from "../../types/Products";
 import { Minus, Plus, Trash2Icon } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useModeContext } from "../../contexts/ModeContext";
 import { InputField } from "../../components/InputField";
-import { useFetch } from "../../hooks/useFetch";
 import { LoadingIcon } from "../../components/LoadingIcon";
+import { useFetch } from "../../hooks/useFetch";
+import { useProductSearch } from "../../hooks/useProductSearch";
+import { useProductManagement } from "../../hooks/useProductManagement";
+import { useHargaSatuan } from "../../hooks/useHargaSatuan";
+import { MemberOption, ProductSale } from "../../types/Cashier";
+import { Product } from "../../types/Products";
 
-type ProductSale = {
+type Member = {
   id: number;
   name: string;
-  satuan: string;
-  quantity: number;
-  harga: number;
-  subTotal: number;
 };
 
 export default function Cashier() {
-  const [products, setProducts] = useState<ProductSale[]>([]); // Array to hold products added to the sale
-  const [productOptions, setProductOptions] = useState<Product[] | null>([]);
-  const [filteredProductOptions, setFilteredProductOptions] =
-    useState(productOptions);
-  const [memberOptions, setMemberOptions] = useState<
-    { value: number; label: string }[] | null
-  >([]);
-
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedMember, setSelectedMember] = useState<{
-    value: number;
-    label: string;
-  } | null>({ value: 0, label: "Umum" });
+  const [selectedMember, setSelectedMember] = useState<MemberOption | null>({
+    value: 0,
+    label: "Umum",
+  });
+  const [memberOptions, setMemberOptions] = useState<MemberOption[] | null>([]);
 
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const location = useLocation();
+  const { toggleAdmin } = useModeContext();
+  const { get } = useFetch<Member[]>();
 
-  const handleInputChange = (input: string) => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      if (!input) {
-        setFilteredProductOptions(productOptions);
-        return;
-      }
-      const fuse = new Fuse(productOptions as Product[], {
-        keys: ["name", "id"],
-        threshold: 0.4,
-      });
-      const results = fuse.search(input);
-      setFilteredProductOptions(results.map((r) => r.item));
-    }, 300);
-  };
+  const {
+    products,
+    setProducts,
+    total,
+    totalItems,
+    handleAddProduct,
+    handleQuantityChange,
+    handleRemoveProduct,
+  } = useProductManagement(selectedMember);
 
-  const { get, isLoading, errorMessage } = useFetch<Product[]>();
+  const {
+    productOptions,
+    filteredProductOptions,
+    isLoading,
+    handleInputChange,
+    fetchProducts,
+  } = useProductSearch();
 
-  const [total, setTotal] = useState(0);
-  const [totalItems, setTotalItems] = useState(0);
+  const {
+    hargaSatuanStates,
+    handleHargaSatuanFocus,
+    handleHargaSatuanChange,
+    handleHargaSatuanBlur,
+  } = useHargaSatuan(products, setProducts);
 
-  const location = useLocation(); // Get the current location
-  const { toggleAdmin } = useModeContext(); // State for admin mode
-
-  // Synchronize isAdminMode with the URL
   useEffect(() => {
     if (location.pathname === "/cashier") {
-      toggleAdmin(true); // Set admin mode if the path is /cashier
+      toggleAdmin(true);
     } else {
-      toggleAdmin(false); // Otherwise, set it to false
+      toggleAdmin(false);
     }
   }, [location.pathname]);
 
-  const fetchData = async () => {
-    console.log("Fetched products");
-    const result = await get("/api/products");
-    const memberData = await get("/api/members");
-
-    setProductOptions(result);
-    setMemberOptions(
-      memberData?.map((member) => ({
-        value: member.id,
-        label: member.name,
-      })) || []
-    );
-  };
-
-  // Fetch initial data for products
   useEffect(() => {
-    fetchData();
+    fetchProducts();
+    const fetchMembers = async () => {
+      const memberData = await get("/api/members");
+      if (memberData) {
+        setMemberOptions(
+          memberData.map((member: Member) => ({
+            value: member.id,
+            label: member.name,
+          }))
+        );
+      }
+    };
+    fetchMembers();
   }, []);
 
   useEffect(() => {
-    handleAddProduct();
+    handleAddProduct(selectedProduct);
   }, [selectedProduct]);
-
-  const handleAddProduct = () => {
-    if (!selectedProduct) return;
-
-    const existingProduct = products.find((p) => p.id === selectedProduct.id);
-    if (existingProduct) {
-      setProducts((prevProducts) =>
-        prevProducts.map((p) =>
-          p.id === selectedProduct.id
-            ? {
-                ...p,
-                quantity: p.quantity + 1,
-                subTotal: (p.quantity + 1) * p.harga,
-              }
-            : p
-        )
-      );
-    } else {
-      setProducts((prevProducts) => [
-        ...prevProducts,
-        {
-          ...selectedProduct,
-          quantity: 1,
-          subTotal: selectedProduct.harga,
-        },
-      ]);
-    }
-
-    setSelectedProduct(null); // Clear the selected product
-  };
-
-  const handleQuantityChange = (id: number, quantity: number) => {
-    setProducts((prevProducts) =>
-      prevProducts.map((p) =>
-        p.id === id
-          ? {
-              ...p,
-              quantity,
-              subTotal: quantity * p.harga,
-            }
-          : p
-      )
-    );
-  };
-
-  const handleRemoveProduct = (id: number) => {
-    setProducts((prevProducts) => prevProducts.filter((p) => p.id !== id));
-  };
-
-  const calculateTotals = () => {
-    const total = products.reduce((sum, p) => sum + p.subTotal, 0);
-    const totalItems = products.length;
-    setTotal(total);
-    setTotalItems(totalItems);
-  };
-
-  useEffect(() => {
-    calculateTotals();
-  }, [products]);
-
-  // const fuse = useMemo(() => {
-  //   console.log("Fuse initialized with product options");
-  //   return new Fuse(productOptions || [], {
-  //     keys: ["name", "id"],
-  //     threshold: 0.4,
-  //   });
-  // }, [productOptions]);
-
-  // // Custom filter function using fuse.js
-  // const customFilter = (candidate: any, input: string) => {
-  //   console.log("Custom filter running with input:", input);
-  //   if (!input) return true;
-  //   const results = fuse.search(input);
-  //   return results.some((result: any) => result.item.id === candidate.value);
-  // };
 
   if (isLoading) return <LoadingIcon />;
 
@@ -199,24 +115,21 @@ export default function Cashier() {
       <div className="mb-4">
         <label className="block text-sm font-medium mb-2">Select Member</label>
         <Select
-          className="bg-background"
+          className=""
           options={memberOptions?.map((member) => ({
             value: member.value,
-            label: `${member.label}`,
+            label: member.label,
           }))}
           value={selectedMember}
           onChange={(selectedOption) => {
-            const selectedMember = selectedOption as {
-              value: number;
-              label: string;
-            };
-            setSelectedMember(selectedMember);
+            setSelectedMember(selectedOption as MemberOption);
           }}
           placeholder="Search member..."
+          isDisabled={products.length > 0}
           styles={{
             control: (base, state) => ({
               ...base,
-              backgroundColor: "var(--color-background-muted)", // Matches your design
+              backgroundColor: "var(--color-background-muted)",
               borderColor: state.isFocused
                 ? "var(--color-primary)"
                 : "var(--color-border-muted)",
@@ -230,7 +143,7 @@ export default function Cashier() {
             }),
             menu: (base) => ({
               ...base,
-              backgroundColor: "var(--color-background-muted)", // Matches dark mode
+              backgroundColor: "var(--color-background-muted)",
               borderRadius: "0.375rem",
               boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
             }),
@@ -263,7 +176,6 @@ export default function Cashier() {
       {/* Product Selection */}
       <div className="mb-8">
         <label className="block text-sm font-medium mb-2">Input Product</label>
-
         <Select
           className="bg-background"
           options={filteredProductOptions?.map((product) => ({
@@ -295,12 +207,12 @@ export default function Cashier() {
             setSelectedProduct(product || null);
           }}
           onInputChange={handleInputChange}
-          filterOption={null} // Disable default filtering
+          filterOption={null}
           placeholder="Search or select a product"
           styles={{
             control: (base, state) => ({
               ...base,
-              backgroundColor: "var(--color-background-muted)", // Matches your design
+              backgroundColor: "var(--color-background-muted)",
               borderColor: state.isFocused
                 ? "var(--color-primary)"
                 : "var(--color-border-muted)",
@@ -314,7 +226,7 @@ export default function Cashier() {
             }),
             menu: (base) => ({
               ...base,
-              backgroundColor: "var(--color-background-muted)", // Matches dark mode
+              backgroundColor: "var(--color-background-muted)",
               borderRadius: "0.375rem",
               boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
             }),
@@ -353,9 +265,8 @@ export default function Cashier() {
             {
               accessorKey: "quantity",
               header: "Qty",
-              cell: ({ row }) => (
+              cell: ({ row }: { row: { original: ProductSale } }) => (
                 <div className="flex items-center gap-2">
-                  {/* Decrease Quantity Button */}
                   <Button
                     variant="outline"
                     onClick={() =>
@@ -364,12 +275,10 @@ export default function Cashier() {
                         row.original.quantity - 1
                       )
                     }
-                    disabled={row.original.quantity <= 1} // Disable if quantity is 1
+                    disabled={row.original.quantity <= 1}
                   >
                     <Minus className="w-4 h-4 mx-auto" />
                   </Button>
-
-                  {/* Quantity Input */}
                   <InputField
                     className="w-16"
                     type="number"
@@ -377,12 +286,10 @@ export default function Cashier() {
                     onChange={(e) =>
                       handleQuantityChange(row.original.id, +e.target.value)
                     }
-                    min={1} // Minimum value for quantity
+                    min={1}
                     label={""}
                     name={""}
                   />
-
-                  {/* Increase Quantity Button */}
                   <Button
                     variant="outline"
                     onClick={() =>
@@ -400,12 +307,73 @@ export default function Cashier() {
             {
               accessorKey: "harga",
               header: "Harga Satuan",
-              cell: ({ getValue }) => {
-                const value = getValue() as number;
-                return value.toLocaleString("id-ID", {
-                  style: "currency",
-                  currency: "IDR",
-                });
+              cell: ({ row }: { row: { original: ProductSale } }) => {
+                const editingState = hargaSatuanStates[row.original.id];
+                const displayValue = editingState?.isEditing
+                  ? editingState.inputValue
+                  : row.original.harga.toString();
+
+                // Determine price type
+                let priceType = "regular";
+                if (row.original.manualHargaSatuan !== undefined) {
+                  priceType = "manual";
+                } else if (
+                  selectedMember?.value !== 0 &&
+                  row.original.member_prices?.find(
+                    (mp) => mp.member_id === selectedMember?.value
+                  )
+                ) {
+                  priceType = "member";
+                } else if (
+                  selectedMember?.value === 0 &&
+                  row.original.harga_grosir?.some(
+                    (hg) => row.original.quantity >= hg.min_qty
+                  )
+                ) {
+                  priceType = "grosir";
+                }
+
+                return (
+                  <div className="flex items-center gap-2">
+                    <InputField
+                      className="w-24"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={displayValue}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, "");
+                        handleHargaSatuanChange(row.original.id, value);
+                      }}
+                      onFocus={() =>
+                        handleHargaSatuanFocus(
+                          row.original.id,
+                          row.original.harga
+                        )
+                      }
+                      onBlur={() => handleHargaSatuanBlur(row.original.id)}
+                      label={""}
+                      name={""}
+                    />
+                    {priceType !== "regular" && (
+                      <span
+                        className={`text-xs px-2 py-1 rounded ${
+                          priceType === "member"
+                            ? "bg-blue-100 text-blue-800"
+                            : priceType === "grosir"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {priceType === "member"
+                          ? "Member"
+                          : priceType === "grosir"
+                          ? "Grosir"
+                          : "Manual"}
+                      </span>
+                    )}
+                  </div>
+                );
               },
             },
             {
@@ -422,7 +390,7 @@ export default function Cashier() {
             {
               accessorKey: "actions",
               header: "",
-              cell: ({ row }) => (
+              cell: ({ row }: { row: { original: ProductSale } }) => (
                 <button
                   onClick={() => handleRemoveProduct(row.original.id)}
                   className="text-red-500 cursor-pointer hover:text-red-700"
@@ -451,7 +419,7 @@ export default function Cashier() {
 
       {/* Save Button */}
       <div className="mt-4 text-center">
-        <Button variant="default" onClick={() => handleSaveReceipt()}>
+        <Button variant="default" onClick={handleSaveReceipt}>
           Save & Print Receipt
         </Button>
       </div>
