@@ -3,7 +3,7 @@ import Select from "react-select";
 import Button from "../../components/Button";
 import { DataTable } from "../../components/DataTable";
 import { Minus, Plus, Trash2Icon } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useModeContext } from "../../contexts/ModeContext";
 import { InputField } from "../../components/InputField";
 import { LoadingIcon } from "../../components/LoadingIcon";
@@ -14,52 +14,14 @@ import { MemberOption, ProductSale } from "../../types/Cashier";
 import { Product } from "../../types/Products";
 import { Input } from "react-select/animated";
 import { ColumnDef } from "@tanstack/react-table";
-import { HargaCell } from "../../components/HargaCell";
+import { HargaCell } from "./HargaCell";
+import { QuantityCell } from "./QuantityCell";
+import { useToast } from "../../contexts/ToastContext";
 
 type Member = {
   id: number;
   name: string;
 };
-
-// Memoize the cell components
-const QuantityCell = React.memo(
-  ({
-    row,
-    handleQuantityChange,
-  }: {
-    row: { original: ProductSale };
-    handleQuantityChange: (id: number, quantity: number) => void;
-  }) => (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="outline"
-        onClick={() =>
-          handleQuantityChange(row.original.id, row.original.quantity - 1)
-        }
-        disabled={row.original.quantity <= 1}
-      >
-        <Minus className="w-4 h-4 mx-auto" />
-      </Button>
-      <InputField
-        className="w-16"
-        type="number"
-        value={row.original.quantity}
-        onChange={(e) => handleQuantityChange(row.original.id, +e.target.value)}
-        min={1}
-        label=""
-        name=""
-      />
-      <Button
-        variant="outline"
-        onClick={() =>
-          handleQuantityChange(row.original.id, row.original.quantity + 1)
-        }
-      >
-        <Plus className="w-4 h-4 mx-auto" />
-      </Button>
-    </div>
-  )
-);
 
 const SubTotalCell = React.memo(({ row }: { row: { original: ProductSale } }) =>
   row.original.subTotal.toLocaleString("id-ID", {
@@ -101,6 +63,14 @@ export default function Cashier() {
   const location = useLocation();
   const { toggleAdmin } = useModeContext();
   const { get } = useFetch<Member[]>();
+  const {
+    post: postSales,
+    isError: isErrorSales,
+    statusCode,
+    errorMessage,
+  } = useFetch<string>();
+  const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const {
     products,
@@ -167,16 +137,33 @@ export default function Cashier() {
     handleAddProduct(selectedProduct);
   }, [selectedProduct]);
 
-  useEffect(() => {
-    console.log("products changed:", products);
-  }, [products]);
+  const handleSaveReceipt = async () => {
+    var newSales = {
+      kasir_id: 1,
+      member_id: selectedMember?.value,
+      total: total,
+      products: products.map((product) => {
+        return {
+          product_id: product.id,
+          harga: product.harga,
+          quantity: product.quantity,
+        };
+      }),
+    };
 
-  useEffect(() => {
-    console.log("selectedMember changed:", selectedMember);
-  }, [selectedMember]);
+    console.log(newSales);
 
-  const handleSaveReceipt = () => {
-    console.log(products);
+    var newSalesId = await postSales("/api/sales", newSales);
+
+    if (newSalesId && !isErrorSales && statusCode === 201) {
+      showToast("Receipt saved successfully", "success");
+      // navigate(`/sales/receipt/${newSalesId}`);
+    } else {
+      showToast(
+        `Failed to save receipt: ${statusCode}: ${errorMessage}`,
+        "error"
+      );
+    }
   };
 
   const renderHargaCell = useCallback(

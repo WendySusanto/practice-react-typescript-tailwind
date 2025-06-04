@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
-import { InputField } from "./InputField";
-import { ProductSale, HargaSatuanState } from "../types/Cashier";
-import { MemberOption } from "../types/Cashier";
+import { InputField } from "../../components/InputField";
+import { ProductSale, HargaSatuanState } from "../../types/Cashier";
+import { MemberOption } from "../../types/Cashier";
 
 interface HargaCellProps {
   row: { original: ProductSale };
