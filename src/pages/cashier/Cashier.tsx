@@ -155,10 +155,12 @@ export default function Cashier() {
 
     var newSalesId = await postSales("/api/sales", newSales);
 
-    if (newSalesId && !isErrorSales && statusCode === 201) {
+    if (newSalesId && !isErrorSales) {
       showToast("Receipt saved successfully", "success");
-      // navigate(`/sales/receipt/${newSalesId}`);
+      toggleAdmin(false);
+      navigate(`/sales/receipt/${newSalesId}`);
     } else {
+      console.error(newSalesId, isErrorSales, statusCode, errorMessage);
       showToast(
         `Failed to save receipt: ${statusCode}: ${errorMessage}`,
         "error"
@@ -227,7 +229,7 @@ export default function Cashier() {
   if (isLoading) return <LoadingIcon />;
 
   return (
-    <div className="text-text sm:p-25 p-4 bg-background h-screen">
+    <div className="text-text sm:p-25 p-4 bg-background">
       <h1 className="text-2xl font-bold text-secondary mb-5">Cashier</h1>
 
       <div className="flex justify-between items-center mb-4">

@@ -22,6 +22,7 @@ type PrintSales = {
   id: number;
   kasir_id: number;
   kode_kasir?: string;
+  kasir_name?: string;
   member_id: number;
   member_name?: string;
   date_added: string;
@@ -44,6 +45,16 @@ export default function SalesDetail() {
     };
     fetchData();
   }, [id]);
+
+  // Add useEffect for printing
+  useEffect(() => {
+    if (data) {
+      // Small delay to ensure all components are rendered
+      setTimeout(() => {
+        window.print();
+      }, 300);
+    }
+  }, [data]); // Add data as dependency
 
   if (isLoading || !data) return <LoadingIcon />;
   if (isError)
@@ -125,7 +136,7 @@ export default function SalesDetail() {
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span>Kasir</span>
-              <span>{data.kode_kasir ?? data.kasir_id}</span>
+              <span>{data.kode_kasir ?? data.kasir_name}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span>Pembeli</span>

@@ -27,7 +27,7 @@ export default function MainContent() {
     <div>
       <SideNavbar />
       <div
-        className={`p-8 max-h-screen  transition-all duration-300 ${
+        className={`p-8 min-h-screen transition-all duration-300 ${
           isExpanded ? "sm:ml-64" : "sm:ml-16"
         }`}
       >

@@ -18,6 +18,7 @@ type PrintSales = {
   id: number;
   kasir_id: number;
   kode_kasir?: string;
+  kasir_name?: string;
   member_id: number;
   member_name?: string;
   member_address?: string;
@@ -195,7 +196,7 @@ export default function FullInvoiceView() {
                       >
                         Kasir
                       </div>
-                      <div>{data.kode_kasir ?? data.kasir_id}</div>
+                      <div>{data.kode_kasir ?? data.kasir_name}</div>
                     </div>
                     <div
                       className="id-transaksi d-flex justify-content-between"
