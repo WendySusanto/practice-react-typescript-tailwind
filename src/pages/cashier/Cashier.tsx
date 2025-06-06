@@ -51,8 +51,6 @@ const ActionsCell = React.memo(
 const MemoizedDataTable = React.memo(DataTable) as typeof DataTable;
 
 export default function Cashier() {
-  console.log("Cashier component rendering");
-
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedMember, setSelectedMember] = useState<MemberOption | null>({
     value: 0,
@@ -62,6 +60,23 @@ export default function Cashier() {
 
   const location = useLocation();
   const { toggleAdmin } = useModeContext();
+
+  useEffect(() => {
+    // Set page title based on current route
+    const pathToTitle: { [key: string]: string } = {
+      "/": "Dashboard",
+      "/products": "Products",
+      "/sales": "Sales",
+      "/members": "Members",
+      "/cashier": "Cashier",
+    };
+
+    const baseTitle = "Sinar Terang";
+    const currentPath = location.pathname;
+    const pageTitle = pathToTitle[currentPath] || "Not Found";
+    document.title = `${pageTitle} | ${baseTitle}`;
+  }, [location]);
+
   const { get } = useFetch<Member[]>();
   const {
     post: postSales,

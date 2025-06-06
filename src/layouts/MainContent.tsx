@@ -1,4 +1,4 @@
-import { IDLE_NAVIGATION, Route, Routes, useNavigate } from "react-router-dom";
+import { Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import Dashboard from "../pages/dashboard/Dashboard";
 import SideNavbar from "./SideNavbar";
 import { useSideBarContext } from "../contexts/SidebarContext";
@@ -16,6 +16,31 @@ export default function MainContent() {
   const { isExpanded } = useSideBarContext();
   const { toggleAdmin, isAdminMode } = useModeContext();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Set page title based on current route
+    const pathToTitle: { [key: string]: string } = {
+      "/": "Dashboard",
+      "/products": "Products",
+      "/sales": "Sales",
+      "/members": "Members",
+      "/cashier": "Cashier",
+    };
+
+    const baseTitle = "Sinar Terang";
+    const currentPath = location.pathname;
+
+    // Handle dynamic routes
+    let pageTitle = "Not Found";
+    if (currentPath.startsWith("/sales/")) {
+      pageTitle = "Sales";
+    } else {
+      pageTitle = pathToTitle[currentPath] || "Not Found";
+    }
+
+    document.title = `${pageTitle} | ${baseTitle}`;
+  }, [location]);
 
   useEffect(() => {
     console.log("isAdminMode:", isAdminMode);
