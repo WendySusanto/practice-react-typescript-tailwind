@@ -114,11 +114,13 @@ export default function Products() {
   } = useFetch<Product[]>();
 
   const fetchData = async () => {
-    const data = await get("/api/products", { Authorization: "Bearer test" });
-    const memberData = await get("/api/members");
+    const dataResponse = await get("/api/products", {
+      Authorization: "Bearer test",
+    });
+    const memberResponse = await get("/api/members");
 
-    if (memberData) {
-      const options = memberData
+    if (memberResponse.success && memberResponse.data) {
+      const options = memberResponse.data
         .map((member) => ({
           value: member.id,
           label: member.name,
@@ -128,8 +130,8 @@ export default function Products() {
       setMemberOptions(options);
     }
 
-    if (data) {
-      setData(data);
+    if (dataResponse.success && dataResponse.data) {
+      setData(dataResponse.data);
     }
   };
 
@@ -310,11 +312,11 @@ export default function Products() {
         flag: true,
       },
       complete: async (results: ParseResult<Product>) => {
-        await post("/api/products/import", results.data);
-
-        fetchData();
-
-        openSuccessModal();
+        const response = await post("/api/products/import", results.data);
+        if (response.success) {
+          fetchData();
+          openSuccessModal();
+        }
       },
       error: (error: Error) => {
         alert("Failed to import CSV: " + error.message);
@@ -329,24 +331,26 @@ export default function Products() {
   const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault(); // Prevent default form submission
     try {
-      await del(`/api/products/${formData.id}`);
-      setData((prev) => prev.filter((item) => item.id !== formData.id));
+      const response = await del(`/api/products/${formData.id}`);
+      if (response.success) {
+        setData((prev) => prev.filter((item) => item.id !== formData.id));
 
-      closeDeleteModal();
-      openSuccessModal();
-      setFormData({
-        id: 0,
-        name: "",
-        satuan: "",
-        modal: "",
-        harga: "",
-        barcode: "",
-        expired: "",
-        note: "",
-        member_prices: [],
-        harga_grosir: [],
-      });
-      setErrors({}); // Clear errors on successful submission
+        closeDeleteModal();
+        openSuccessModal();
+        setFormData({
+          id: 0,
+          name: "",
+          satuan: "",
+          modal: "",
+          harga: "",
+          barcode: "",
+          expired: "",
+          note: "",
+          member_prices: [],
+          harga_grosir: [],
+        });
+        setErrors({}); // Clear errors on successful submission
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Map zod errors to a state object
@@ -389,27 +393,29 @@ export default function Products() {
 
       console.log("Saving product:", validatedData);
 
-      await post("/api/products", validatedData, {
+      const response = await post("/api/products", validatedData, {
         Authorization: "Bearer test",
       });
 
-      setData((prev) => [...prev, validatedData as Product]);
+      if (response.success && response.data) {
+        setData((prev) => [...prev, validatedData as Product]);
 
-      closeAddModal();
-      openSuccessModal();
-      setFormData({
-        id: 0,
-        name: "",
-        satuan: "",
-        modal: "",
-        harga: "",
-        barcode: "",
-        expired: "",
-        note: "",
-        member_prices: [],
-        harga_grosir: [],
-      });
-      setErrors({}); // Clear errors on successful submission
+        closeAddModal();
+        openSuccessModal();
+        setFormData({
+          id: 0,
+          name: "",
+          satuan: "",
+          modal: "",
+          harga: "",
+          barcode: "",
+          expired: "",
+          note: "",
+          member_prices: [],
+          harga_grosir: [],
+        });
+        setErrors({}); // Clear errors on successful submission
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Map zod errors to a state object
@@ -479,35 +485,39 @@ export default function Products() {
 
       console.log("Saving product:", validatedData);
 
-      await patch("/api/products", validatedData, {
+      const response = await patch("/api/products", validatedData, {
         Authorization: "Bearer test",
       });
 
-      setData((prev) => {
-        const index = prev.findIndex((item) => item.id === Number(formData.id));
-        if (index !== -1) {
-          const updatedData = [...prev];
-          updatedData[index] = { ...updatedData[index], ...validatedData };
-          return updatedData;
-        }
-        return prev;
-      });
+      if (response.success) {
+        setData((prev) => {
+          const index = prev.findIndex(
+            (item) => item.id === Number(formData.id)
+          );
+          if (index !== -1) {
+            const updatedData = [...prev];
+            updatedData[index] = { ...updatedData[index], ...validatedData };
+            return updatedData;
+          }
+          return prev;
+        });
 
-      closeEditModal();
-      openSuccessModal();
-      setFormData({
-        id: 0,
-        name: "",
-        satuan: "",
-        modal: "",
-        harga: "",
-        barcode: "",
-        expired: "",
-        note: "",
-        member_prices: [],
-        harga_grosir: [],
-      });
-      setErrors({}); // Clear errors on successful submission
+        closeEditModal();
+        openSuccessModal();
+        setFormData({
+          id: 0,
+          name: "",
+          satuan: "",
+          modal: "",
+          harga: "",
+          barcode: "",
+          expired: "",
+          note: "",
+          member_prices: [],
+          harga_grosir: [],
+        });
+        setErrors({}); // Clear errors on successful submission
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Map zod errors to a state object

@@ -78,12 +78,7 @@ export default function Cashier() {
   }, [location]);
 
   const { get } = useFetch<Member[]>();
-  const {
-    post: postSales,
-    isError: isErrorSales,
-    statusCode,
-    errorMessage,
-  } = useFetch<string>();
+  const { post: postSales } = useFetch<string>();
   const navigate = useNavigate();
   const { showToast } = useToast();
 
@@ -135,10 +130,10 @@ export default function Cashier() {
   useEffect(() => {
     fetchProducts();
     const fetchMembers = async () => {
-      const memberData = await get("/api/members");
-      if (memberData) {
+      const response = await get("/api/members");
+      if (response.success && response.data) {
         setMemberOptions(
-          memberData.map((member: Member) => ({
+          response.data.map((member: Member) => ({
             value: member.id,
             label: member.name,
           }))
@@ -150,6 +145,7 @@ export default function Cashier() {
 
   useEffect(() => {
     handleAddProduct(selectedProduct);
+    setSelectedProduct(null);
   }, [selectedProduct]);
 
   const handleSaveReceipt = async () => {
@@ -168,16 +164,16 @@ export default function Cashier() {
 
     console.log(newSales);
 
-    var newSalesId = await postSales("/api/sales", newSales);
+    const response = await postSales("/api/sales", newSales);
 
-    if (newSalesId && !isErrorSales) {
+    if (response.success && response.data) {
       showToast("Receipt saved successfully", "success");
       toggleAdmin(false);
-      navigate(`/sales/receipt/${newSalesId}`);
+      navigate(`/sales/receipt/${response.data}`);
     } else {
-      console.error(newSalesId, isErrorSales, statusCode, errorMessage);
+      console.error(response);
       showToast(
-        `Failed to save receipt: ${statusCode}: ${errorMessage}`,
+        `Failed to save receipt: ${response.statusCode}: ${response.error}`,
         "error"
       );
     }
@@ -391,6 +387,7 @@ export default function Cashier() {
               "&:hover": {
                 backgroundColor: "var(--color-primary-light)",
               },
+              color: "var(--color-text-text)",
             }),
             placeholder: (base) => ({
               ...base,

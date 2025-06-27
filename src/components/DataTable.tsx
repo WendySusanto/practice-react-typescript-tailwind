@@ -35,8 +35,6 @@ export function DataTable<TData, TValue>({
 
   const [globalFilter, setGlobalFilter] = useState("");
 
-  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: disablePagination ? Number(data?.length) : 20,
@@ -96,8 +94,8 @@ export function DataTable<TData, TValue>({
             </thead>
             {/* Body */}
             <tbody className="bg-background">
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
+              {table.getCoreRowModel().rows?.length ? (
+                table.getCoreRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
                     className="hover:bg-primary-light transition-colors"

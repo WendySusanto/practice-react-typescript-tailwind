@@ -7,6 +7,13 @@ interface FetchParam {
   headers?: HeadersInit;
 }
 
+interface FetchResponse<T> {
+  data: T | null;
+  statusCode: number | null;
+  error: string | null;
+  success: boolean;
+}
+
 export const useFetch = <T = any>() => {
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -16,7 +23,12 @@ export const useFetch = <T = any>() => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
   const fetchData = useCallback(
-    async ({ url, method, body, headers }: FetchParam): Promise<T | null> => {
+    async ({
+      url,
+      method,
+      body,
+      headers,
+    }: FetchParam): Promise<FetchResponse<T>> => {
       const controller = new AbortController();
       const signal = controller.signal;
 
@@ -47,23 +59,45 @@ export const useFetch = <T = any>() => {
             : null;
 
         if (!response.ok) {
-          throw new Error(
-            result?.message || `HTTP error! status: ${response.status}`
-          );
+          const errorMsg =
+            result?.message || `HTTP error! status: ${response.status}`;
+          setIsError(true);
+          setErrorMessage(errorMsg);
+          return {
+            data: null,
+            statusCode: response.status,
+            error: errorMsg,
+            success: false,
+          };
         }
 
-        return result;
+        return {
+          data: result,
+          statusCode: response.status,
+          error: null,
+          success: true,
+        };
       } catch (error) {
         if (signal.aborted) {
           console.log("Fetch aborted");
-          return null;
+          return {
+            data: null,
+            statusCode: null,
+            error: "Request aborted",
+            success: false,
+          };
         }
 
         const message =
           error instanceof Error ? error.message : "Unknown error";
         setIsError(true);
         setErrorMessage(message);
-        return null;
+        return {
+          data: null,
+          statusCode: null,
+          error: message,
+          success: false,
+        };
       } finally {
         setIsLoading(false);
       }

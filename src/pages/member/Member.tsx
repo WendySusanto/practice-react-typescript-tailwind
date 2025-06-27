@@ -69,10 +69,10 @@ export default function Members() {
   } = useFetch<Member[]>();
 
   const fetchData = async () => {
-    const data = await get("/api/members", {
+    const response = await get("/api/members", {
       Authorization: "Bearer test",
     });
-    if (data) setData(data);
+    if (response.success && response.data) setData(response.data);
   };
 
   useEffect(() => {
@@ -163,20 +163,22 @@ export default function Members() {
     e.preventDefault();
     try {
       console.log("Deleting member with ID:", formData.id);
-      await del(`/api/members/${formData.id}`);
-      setData((prev) => prev.filter((item) => item.id !== formData.id));
-      closeDeleteModal();
-      openSuccessModal();
-      setFormData({
-        id: 0,
-        name: "",
-        address: "",
-        phone: "",
-        note: "",
-        flag: 1,
-        date_added: "",
-      });
-      setErrors({});
+      const response = await del(`/api/members/${formData.id}`);
+      if (response.success) {
+        setData((prev) => prev.filter((item) => item.id !== formData.id));
+        closeDeleteModal();
+        openSuccessModal();
+        setFormData({
+          id: 0,
+          name: "",
+          address: "",
+          phone: "",
+          note: "",
+          flag: 1,
+          date_added: "",
+        });
+        setErrors({});
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
@@ -205,31 +207,33 @@ export default function Members() {
 
       console.log("Validated Data:", validatedData);
 
-      var newId = await post("/api/members", validatedData, {
+      const response = await post("/api/members", validatedData, {
         Authorization: "Bearer test",
       });
 
-      console.log("New Member ID:", newId);
+      if (response.success && response.data) {
+        console.log("New Member ID:", response.data);
 
-      const newMember: Member = {
-        ...(validatedData as Member),
-        id: Number(newId),
-        date_added: new Date().toISOString(),
-      };
-      console.log("New Member:", newMember);
-      setData((prev) => [...prev, newMember]);
-      closeAddModal();
-      openSuccessModal();
-      setFormData({
-        id: 0,
-        name: "",
-        address: "",
-        phone: "",
-        note: "",
-        flag: 1,
-        date_added: "",
-      });
-      setErrors({});
+        const newMember: Member = {
+          ...(validatedData as Member),
+          id: Number(response.data),
+          date_added: new Date().toISOString(),
+        };
+        console.log("New Member:", newMember);
+        setData((prev) => [...prev, newMember]);
+        closeAddModal();
+        openSuccessModal();
+        setFormData({
+          id: 0,
+          name: "",
+          address: "",
+          phone: "",
+          note: "",
+          flag: 1,
+          date_added: "",
+        });
+        setErrors({});
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};

@@ -38,7 +38,7 @@ export default function FullInvoiceView() {
       const res = await get(`/api/sales/${id}`, {
         Authorization: "Bearer test",
       });
-      if (res) setData(res);
+      if (res.success && res.data) setData(res.data);
     };
     fetchData();
   }, [id]);

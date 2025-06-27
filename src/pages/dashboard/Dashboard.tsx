@@ -107,13 +107,14 @@ export default function Dashboard() {
       const productsData = await getProducts("/api/products", {
         Authorization: "Bearer test",
       });
-      if (productsData) setProducts(productsData);
+      if (productsData.data && productsData.success)
+        setProducts(productsData.data);
 
       // Fetch sales with product details
       const salesData = await getSales("/api/sales?includeDetails=true", {
         Authorization: "Bearer test",
       });
-      if (salesData) setSales(salesData);
+      if (salesData.data && salesData.success) setSales(salesData.data);
     };
     fetchData();
   }, []);

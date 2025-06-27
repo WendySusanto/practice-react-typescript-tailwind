@@ -103,8 +103,10 @@ export default function SalesPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await get("/api/sales", { Authorization: "Bearer test" });
-      if (data) setData(data);
+      const response = await get("/api/sales", {
+        Authorization: "Bearer test",
+      });
+      if (response.success && response.data) setData(response.data);
     };
     fetchData();
   }, []);

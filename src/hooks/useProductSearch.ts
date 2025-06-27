@@ -31,8 +31,10 @@ export const useProductSearch = () => {
 
   const fetchProducts = async () => {
     const result = await get("/api/products");
-    setProductOptions(result);
-    setFilteredProductOptions(result);
+    if (result.success && result.data) {
+      setProductOptions(result.data);
+      setFilteredProductOptions(result.data);
+    }
   };
 
   return {
